@@ -78,11 +78,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ModuleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Module")
+	if err = controllers.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controllers")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

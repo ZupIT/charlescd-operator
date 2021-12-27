@@ -80,17 +80,21 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 fmt: ## Run go fmt against code.
-	go fmt ./...
+	gofumpt -l -w -extra .
 
 vet: ## Run go vet against code.
 	go vet ./...
+
+wire: ## Compile-time dependency injection.
+	go get -d github.com/google/wire/cmd/wire@v0.5.0
+	go generate ./...
 
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
-build: generate fmt vet ## Build manager binary.
+build: generate wire fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
