@@ -1,0 +1,6 @@
+apiVersion: deploy.charlescd.io/v1alpha1
+kind: Module
+metadata:
+  name: module-sample
+spec:
+  # Add fields here
