@@ -18,18 +18,39 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Repository Repository           `json:"repository"`
+	Values     runtime.RawExtension `json:"values,omitempty"`
+}
 
-	// Foo is an example field of Module. Edit module_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// Repository defines the location where sources are stored
+type Repository struct {
+	Git  *Git  `json:"git,omitempty"`
+	Helm *Helm `json:"helm,omitempty"`
+}
+
+// Git defines the address where sources are tracked
+type Git struct {
+	URL string `json:"url,omitempty"`
+	Ref *Ref   `json:"ref,omitempty"`
+}
+
+// Ref defines references to a specific commit
+type Ref struct {
+	Branch string `json:"branch,omitempty"`
+	Commit string `json:"commit,omitempty"`
+	Tag    string `json:"tag,omitempty"`
+}
+
+// Helm defines the address where charts are packaged
+type Helm struct {
+	URL     string `json:"url,omitempty"`
+	Chart   string `json:"chart,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // ModuleStatus defines the observed state of Module

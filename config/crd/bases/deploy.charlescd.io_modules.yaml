@@ -36,10 +36,40 @@ spec:
           spec:
             description: ModuleSpec defines the desired state of Module
             properties:
-              foo:
-                description: Foo is an example field of Module. Edit module_types.go
-                  to remove/update
-                type: string
+              repository:
+                description: Repository defines the location where sources are stored
+                properties:
+                  git:
+                    description: Git defines the address where sources are tracked
+                    properties:
+                      ref:
+                        description: Ref defines references to a specific commit
+                        properties:
+                          branch:
+                            type: string
+                          commit:
+                            type: string
+                          tag:
+                            type: string
+                        type: object
+                      url:
+                        type: string
+                    type: object
+                  helm:
+                    description: Helm defines the address where charts are packaged
+                    properties:
+                      chart:
+                        type: string
+                      url:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                type: object
+              values:
+                type: object
+            required:
+            - repository
             type: object
           status:
             description: ModuleStatus defines the observed state of Module
