@@ -35,13 +35,8 @@ type Repository struct {
 
 // Git defines the address where sources are tracked
 type Git struct {
-	URL  string `json:"url,omitempty"`
-	Path string `json:"path,omitempty"`
-	Ref  *Ref   `json:"ref,omitempty"`
-}
-
-// Ref defines references to a specific commit
-type Ref struct {
+	URL    string `json:"url,omitempty"`
+	Path   string `json:"path,omitempty"`
 	Branch string `json:"branch,omitempty"`
 	Commit string `json:"commit,omitempty"`
 	Tag    string `json:"tag,omitempty"`

@@ -42,18 +42,14 @@ spec:
                   git:
                     description: Git defines the address where sources are tracked
                     properties:
+                      branch:
+                        type: string
+                      commit:
+                        type: string
                       path:
                         type: string
-                      ref:
-                        description: Ref defines references to a specific commit
-                        properties:
-                          branch:
-                            type: string
-                          commit:
-                            type: string
-                          tag:
-                            type: string
-                        type: object
+                      tag:
+                        type: string
                       url:
                         type: string
                     type: object
