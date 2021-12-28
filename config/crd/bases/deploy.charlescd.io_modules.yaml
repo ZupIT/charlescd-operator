@@ -42,6 +42,8 @@ spec:
                   git:
                     description: Git defines the address where sources are tracked
                     properties:
+                      path:
+                        type: string
                       ref:
                         description: Ref defines references to a specific commit
                         properties:
