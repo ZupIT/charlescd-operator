@@ -60,7 +60,7 @@ type ModuleReconciler struct {
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l := logger.V(1).WithValues("trace", span)
+	l := logger.WithValues("trace", span)
 
 	l.Info("Reconciling...")
 	module, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)

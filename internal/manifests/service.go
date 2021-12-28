@@ -15,14 +15,14 @@ import (
 var (
 	//go:embed manifests.yaml
 	manifests []byte
-	logger    = ctrl.Log.WithName("manifests")
+	logger    = ctrl.Log.WithName("manifest").WithName("client")
 )
 
 type Service struct{ Client mf.Client }
 
 func (s *Service) Defaults(ctx context.Context) (mf.Manifest, error) {
 	span := tracing.SpanFromContext(ctx)
-	l := logger.V(1).WithValues("trace", span)
+	l := logger.WithValues("trace", span).V(1)
 	reader := bytes.NewReader(manifests)
 	m, err := mf.ManifestFrom(mf.Reader(reader), mf.UseClient(s.Client), mf.UseLogger(l))
 	if err != nil {
