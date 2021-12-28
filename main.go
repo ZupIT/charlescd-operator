@@ -36,6 +36,7 @@ import (
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/controllers"
+	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -82,6 +83,12 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zapr.New(zapr.UseFlagOptions(&opts)))
+
+	closer, err := tracing.Initialize()
+	if err != nil {
+		return
+	}
+	defer closer.Close()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

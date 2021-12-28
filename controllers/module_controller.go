@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
 var logger = ctrl.Log.WithName("controller").WithName("module")
@@ -57,19 +58,21 @@ type ModuleReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	l := logger.V(1)
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	l := logger.V(1).WithValues("trace", span)
 
 	l.Info("Reconciling...")
 	module, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
 		l.Error(err, "Error getting resource with desired module state")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, span.HandleError(err)
 	}
 
 	var manifests mf.Manifest
 	if manifests, err = r.Manifests.Defaults(ctx); err != nil {
 		l.Error(err, "Error reading YAML manifests")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, span.HandleError(err)
 	}
 	git := module.Spec.Repository.Git
 	if git == nil {
@@ -99,11 +102,11 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return nil
 	}); err != nil {
 		l.Error(err, "Error transforming a manifest resource")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, span.HandleError(err)
 	}
 	if err = manifests.Apply(); err != nil {
 		l.Error(err, "Error applying changes to resources in manifest")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, span.HandleError(err)
 	}
 	l.Info("Successfully reconciled!")
 	return ctrl.Result{}, nil
