@@ -21,13 +21,10 @@ package controllers
 
 import (
 	"github.com/google/wire"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func createReconcilers(client.Client, *runtime.Scheme) ([]Reconciler, error) {
-	wire.Build(
-		providers,
-	)
+func createReconcilers(manager.Manager) ([]Reconciler, error) {
+	wire.Build(providers)
 	return nil, nil
 }

@@ -25,8 +25,7 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
-	client, scheme := mgr.GetClient(), mgr.GetScheme()
-	r, err := createReconcilers(client, scheme)
+	r, err := createReconcilers(mgr)
 	if err != nil {
 		return fmt.Errorf("unable to create reconcilers: %w", err)
 	}

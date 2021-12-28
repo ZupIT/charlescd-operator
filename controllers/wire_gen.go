@@ -7,14 +7,34 @@
 package controllers
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/manifestival/client-go-client"
+	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
+	"github.com/tiagoangelozup/charles-alpha/internal/module"
+	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // Injectors from wire.go:
 
-func createReconcilers(clientClient client.Client, scheme *runtime.Scheme) ([]Reconciler, error) {
-	moduleReconciler := &ModuleReconciler{}
+func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
+	config := runtime.Config(managerManager)
+	manifestivalClient, err := client.NewClient(config)
+	if err != nil {
+		return nil, err
+	}
+	service := &manifests.Service{
+		Client: manifestivalClient,
+	}
+	clientClient := runtime.Client(managerManager)
+	moduleService := &module.Service{
+		Client: clientClient,
+	}
+	scheme := runtime.Scheme(managerManager)
+	moduleReconciler := &ModuleReconciler{
+		Manifests:    service,
+		ModuleGetter: moduleService,
+		Scheme:       scheme,
+	}
 	v := reconcilers(moduleReconciler)
 	return v, nil
 }

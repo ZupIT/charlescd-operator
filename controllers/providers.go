@@ -16,10 +16,21 @@ limitations under the License.
 
 package controllers
 
-import "github.com/google/wire"
+import (
+	"github.com/google/wire"
+
+	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
+	"github.com/tiagoangelozup/charles-alpha/internal/module"
+	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
+)
 
 var providers = wire.NewSet(
 	reconcilers,
+	manifests.Providers,
+	module.Providers,
+	runtime.Providers,
+	wire.Bind(new(Manifests), new(*manifests.Service)),
+	wire.Bind(new(ModuleGetter), new(*module.Service)),
 	wire.Struct(new(ModuleReconciler), "*"),
 )
 
