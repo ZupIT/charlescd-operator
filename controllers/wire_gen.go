@@ -10,7 +10,9 @@ import (
 	"github.com/manifestival/client-go-client"
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/module"
+	"github.com/tiagoangelozup/charles-alpha/internal/object"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
+	"github.com/tiagoangelozup/charles-alpha/internal/usecase"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -25,15 +27,28 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	service := &manifests.Service{
 		Client: manifestivalClient,
 	}
+	scheme := runtime.Scheme(managerManager)
+	unstructuredConverter := &object.UnstructuredConverter{
+		Scheme: scheme,
+	}
+	reference := &object.Reference{
+		Scheme: scheme,
+	}
+	desiredState := &usecase.DesiredState{
+		Manifests: service,
+		Object:    unstructuredConverter,
+		Reference: reference,
+	}
+	adapter := ModuleAdapter{
+		DesiredState: desiredState,
+	}
 	clientClient := runtime.Client(managerManager)
 	moduleService := &module.Service{
 		Client: clientClient,
 	}
-	scheme := runtime.Scheme(managerManager)
 	moduleReconciler := &ModuleReconciler{
-		Manifests:    service,
-		ModuleGetter: moduleService,
-		Scheme:       scheme,
+		ModuleAdapter: adapter,
+		ModuleGetter:  moduleService,
 	}
 	v := reconcilers(moduleReconciler)
 	return v, nil
