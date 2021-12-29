@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
@@ -40,6 +41,7 @@ type ModuleGetter interface {
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
 	ModuleAdapter
+	Predicates
 	ModuleGetter ModuleGetter
 }
 
@@ -73,6 +75,7 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &sourcev1.GitRepository{}},
 			&handler.EnqueueRequestForOwner{OwnerType: &deployv1alpha1.Module{}, IsController: false}).
+		WithEventFilter(predicate.Or(r.PredicateModule, r.PredicateRepoStatus)).
 		WithLogger(log.NullLogger{}).
 		Complete(r)
 }

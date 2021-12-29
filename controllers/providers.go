@@ -22,6 +22,7 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/module"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
+	"github.com/tiagoangelozup/charles-alpha/internal/predicate"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/usecase"
 )
@@ -31,6 +32,7 @@ var providers = wire.NewSet(
 	manifests.Providers,
 	module.Providers,
 	object.Providers,
+	predicate.Providers,
 	runtime.Providers,
 	usecase.Providers,
 	wire.Bind(new(DesiredState), new(*usecase.DesiredState)),
@@ -40,6 +42,7 @@ var providers = wire.NewSet(
 	wire.Bind(new(usecase.ObjectReference), new(*object.Reference)),
 	wire.Struct(new(ModuleAdapter), "*"),
 	wire.Struct(new(ModuleReconciler), "*"),
+	wire.Struct(new(Predicates), "*"),
 )
 
 func reconcilers(m *ModuleReconciler) []Reconciler {
