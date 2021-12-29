@@ -64,7 +64,7 @@ func (ds *DesiredState) EnsureDesiredState(ctx context.Context, module *deployv1
 				Tag:    git.Tag,
 				Commit: git.Commit,
 			}
-			if err = ds.Reference.SetOwner(module, gitrepo); err != nil {
+			if err = ds.Reference.SetController(module, gitrepo); err != nil {
 				return err
 			}
 			if err = ds.Object.ToUnstructured(gitrepo, u); err != nil {

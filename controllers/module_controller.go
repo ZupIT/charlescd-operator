@@ -22,10 +22,8 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
@@ -72,9 +70,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&deployv1alpha1.Module{}).
-		Watches(
-			&source.Kind{Type: &sourcev1.GitRepository{}},
-			&handler.EnqueueRequestForOwner{OwnerType: &deployv1alpha1.Module{}, IsController: false}).
+		Owns(&sourcev1.GitRepository{}).
 		WithEventFilter(predicate.Or(r.PredicateModule, r.PredicateRepoStatus)).
 		WithLogger(log.NullLogger{}).
 		Complete(r)
