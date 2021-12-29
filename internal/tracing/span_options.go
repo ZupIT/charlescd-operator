@@ -22,8 +22,7 @@ func (o *SpanOptions) Operation() string {
 		} else {
 			lastSlash++
 		}
-		firstDot := strings.IndexByte(funcName[lastSlash:], '.') + lastSlash
-		return funcName[firstDot+1:]
+		return funcName[lastSlash:]
 	}
 	return o.operation
 }
