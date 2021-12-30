@@ -13,6 +13,7 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
 	"github.com/tiagoangelozup/charles-alpha/internal/predicate"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
+	"github.com/tiagoangelozup/charles-alpha/internal/source"
 	"github.com/tiagoangelozup/charles-alpha/internal/usecase"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -40,7 +41,13 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		Object:    unstructuredConverter,
 		Reference: reference,
 	}
-	helmInstallation := &usecase.HelmInstallation{}
+	clientClient := runtime.Client(managerManager)
+	sourceService := &source.Service{
+		Client: clientClient,
+	}
+	helmInstallation := &usecase.HelmInstallation{
+		GitRepositoryGetter: sourceService,
+	}
 	moduleAdapter := ModuleAdapter{
 		DesiredState:     desiredState,
 		HelmInstallation: helmInstallation,
@@ -51,7 +58,6 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		PredicateRepoStatus: repoStatus,
 		PredicateModule:     predicateModule,
 	}
-	clientClient := runtime.Client(managerManager)
 	moduleService := &module.Service{
 		Client: clientClient,
 	}
