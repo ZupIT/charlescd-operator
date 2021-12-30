@@ -40,23 +40,25 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		Object:    unstructuredConverter,
 		Reference: reference,
 	}
+	helmInstallation := &usecase.HelmInstallation{}
 	moduleAdapter := ModuleAdapter{
-		DesiredState: desiredState,
+		DesiredState:     desiredState,
+		HelmInstallation: helmInstallation,
+	}
+	repoStatus := &predicate.RepoStatus{}
+	predicateModule := &predicate.Module{}
+	predicates := Predicates{
+		PredicateRepoStatus: repoStatus,
+		PredicateModule:     predicateModule,
 	}
 	clientClient := runtime.Client(managerManager)
 	moduleService := &module.Service{
 		Client: clientClient,
 	}
-	repoStatus := &predicate.RepoStatus{}
-	predicateModule := &predicate.Module{}
-	controllersPredicate := Predicates{
-		PredicateRepoStatus: repoStatus,
-		PredicateModule:     predicateModule,
-	}
 	moduleReconciler := &ModuleReconciler{
 		ModuleAdapter: moduleAdapter,
+		Predicates:    predicates,
 		ModuleGetter:  moduleService,
-		Predicates:    controllersPredicate,
 	}
 	v := reconcilers(moduleReconciler)
 	return v, nil

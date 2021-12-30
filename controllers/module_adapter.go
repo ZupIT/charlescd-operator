@@ -10,8 +10,13 @@ import (
 
 type ModuleAdapter struct {
 	DesiredState
+	HelmInstallation
 }
 
 type DesiredState interface {
 	EnsureDesiredState(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error)
+}
+
+type HelmInstallation interface {
+	EnsureHelmInstallation(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error)
 }

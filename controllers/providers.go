@@ -36,6 +36,7 @@ var providers = wire.NewSet(
 	runtime.Providers,
 	usecase.Providers,
 	wire.Bind(new(DesiredState), new(*usecase.DesiredState)),
+	wire.Bind(new(HelmInstallation), new(*usecase.HelmInstallation)),
 	wire.Bind(new(ModuleGetter), new(*module.Service)),
 	wire.Bind(new(usecase.Manifests), new(*manifests.Service)),
 	wire.Bind(new(usecase.ObjectConverter), new(*object.UnstructuredConverter)),
