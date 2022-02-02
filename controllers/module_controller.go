@@ -20,9 +20,9 @@ import (
 	"context"
 
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
@@ -73,6 +73,6 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&deployv1alpha1.Module{}).
 		Owns(&sourcev1.GitRepository{}).
 		WithEventFilter(predicate.Or(r.PredicateModule, r.PredicateRepoStatus)).
-		WithLogger(log.NullLogger{}).
+		WithLogger(logr.Discard()).
 		Complete(r)
 }
