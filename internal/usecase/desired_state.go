@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
@@ -34,6 +35,19 @@ type DesiredState struct {
 	Manifests Manifests
 	Object    ObjectConverter
 	Reference ObjectReference
+
+	next runtime.ReconcilerOperation
+}
+
+func (ds *DesiredState) SetNext(next runtime.ReconcilerOperation) {
+	ds.next = next
+}
+
+func (ds *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	if module, ok := obj.(*deployv1alpha1.Module); ok {
+		return ds.EnsureDesiredState(ctx, module)
+	}
+	return ds.next.Reconcile(ctx, obj)
 }
 
 func (ds *DesiredState) EnsureDesiredState(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
@@ -80,5 +94,5 @@ func (ds *DesiredState) EnsureDesiredState(ctx context.Context, module *deployv1
 		l.Error(err, "Error applying changes to resources in manifest")
 		return runtime.RequeueOnErr(ctx, err)
 	}
-	return runtime.Finish()
+	return ds.next.Reconcile(ctx, module)
 }

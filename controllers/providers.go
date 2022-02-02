@@ -37,8 +37,6 @@ var providers = wire.NewSet(
 	runtime.Providers,
 	source.Providers,
 	usecase.Providers,
-	wire.Bind(new(DesiredState), new(*usecase.DesiredState)),
-	wire.Bind(new(HelmInstallation), new(*usecase.HelmInstallation)),
 	wire.Bind(new(ModuleGetter), new(*module.Service)),
 	wire.Bind(new(usecase.GitRepositoryGetter), new(*source.Service)),
 	wire.Bind(new(usecase.Manifests), new(*manifests.Service)),

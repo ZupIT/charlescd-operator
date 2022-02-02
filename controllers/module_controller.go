@@ -61,10 +61,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return runtime.RequeueOnErr(ctx, err)
 	}
 
-	return NewModuleOperationChain(
-		r.EnsureDesiredState,
-		r.EnsureHelmInstallation,
-	).Handle(ctx, module)
+	return runtime.Operations(
+		r.DesiredState,
+		r.HelmInstallation,
+	).Reconcile(ctx, module)
 }
 
 // SetupWithManager sets up the controller with the Manager.

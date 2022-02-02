@@ -33,6 +33,19 @@ type GitRepositoryGetter interface {
 type HelmInstallation struct {
 	GitRepositoryGetter GitRepositoryGetter
 	Helm                Helm
+
+	next runtime.ReconcilerOperation
+}
+
+func (hi *HelmInstallation) SetNext(next runtime.ReconcilerOperation) {
+	hi.next = next
+}
+
+func (hi *HelmInstallation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	if module, ok := obj.(*deployv1alpha1.Module); ok {
+		return hi.EnsureHelmInstallation(ctx, module)
+	}
+	return hi.next.Reconcile(ctx, obj)
 }
 
 func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
@@ -79,7 +92,7 @@ func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *
 	//		return runtime.RequeueOnErr(ctx, err)
 	//	}
 
-	return runtime.Finish()
+	return hi.next.Reconcile(ctx, module)
 }
 
 func downloadArtifact(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
