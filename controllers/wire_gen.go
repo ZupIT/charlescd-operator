@@ -11,10 +11,11 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/module"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
-	"github.com/tiagoangelozup/charles-alpha/internal/predicate"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/source"
-	"github.com/tiagoangelozup/charles-alpha/internal/usecase"
+	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
+	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
+	"github.com/tiagoangelozup/charles-alpha/pkg/usecase"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -33,38 +34,32 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	unstructuredConverter := &object.UnstructuredConverter{
 		Scheme: scheme,
 	}
+	gitRepository := transformer.NewGitRepository(unstructuredConverter)
 	reference := &object.Reference{
 		Scheme: scheme,
 	}
-	desiredState := &usecase.DesiredState{
-		Manifests: service,
-		Object:    unstructuredConverter,
-		Reference: reference,
+	metadata := transformer.NewMetadata(reference)
+	transformers := &usecase.Transformers{
+		GitRepository: gitRepository,
+		Metadata:      metadata,
 	}
+	filterGitRepository := &filter.GitRepository{}
+	filters := &usecase.Filters{
+		GitRepository: filterGitRepository,
+	}
+	desiredState := usecase.NewDesiredState(service, transformers, filters)
 	clientClient := runtime.Client(managerManager)
 	sourceService := &source.Service{
 		Client: clientClient,
 	}
-	helmInstallation := &usecase.HelmInstallation{
-		GitRepositoryGetter: sourceService,
-	}
-	moduleAdapter := ModuleAdapter{
-		DesiredState:     desiredState,
-		HelmInstallation: helmInstallation,
-	}
-	repoStatus := &predicate.RepoStatus{}
-	predicateModule := &predicate.Module{}
-	predicates := Predicates{
-		PredicateRepoStatus: repoStatus,
-		PredicateModule:     predicateModule,
-	}
+	helmInstallation := usecase.NewHelmInstallation(sourceService)
 	moduleService := &module.Service{
 		Client: clientClient,
 	}
 	moduleReconciler := &ModuleReconciler{
-		ModuleAdapter: moduleAdapter,
-		Predicates:    predicates,
-		ModuleGetter:  moduleService,
+		DesiredState:     desiredState,
+		HelmInstallation: helmInstallation,
+		ModuleGetter:     moduleService,
 	}
 	v := reconcilers(moduleReconciler)
 	return v, nil
