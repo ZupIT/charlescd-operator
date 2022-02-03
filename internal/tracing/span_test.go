@@ -24,7 +24,7 @@ func TestSpan_Info(t *testing.T) {
 		_, ctx := tracing.StartSpanFromContext(context.TODO())
 		info := new(empty).f(ctx)
 
-		assert.Equal(t, "(*empty).f", info.OperationName)
+		assert.Equal(t, "tracing_test.(*empty).f", info.OperationName)
 	})
 
 	t.Run("SHOULD have a trace id WHEN child context is started", func(t *testing.T) {

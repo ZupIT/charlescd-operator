@@ -1,4 +1,4 @@
-package predicate
+package eventfilter
 
 import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-var repoStatusLog = ctrl.Log.WithName("predicate").
+var repoStatusLog = ctrl.Log.WithName("eventfilter").
 	WithValues("name", "gitrepositories", "version", "source.toolkit.fluxcd.io/v1beta1").
 	V(1)
 

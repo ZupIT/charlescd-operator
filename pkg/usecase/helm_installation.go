@@ -13,6 +13,7 @@ import (
 
 	"github.com/fluxcd/source-controller/api/v1beta1"
 	mf "github.com/manifestival/manifestival"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +38,10 @@ type HelmInstallation struct {
 	next runtime.ReconcilerOperation
 }
 
+func NewHelmInstallation(gitRepositoryGetter GitRepositoryGetter) *HelmInstallation {
+	return &HelmInstallation{GitRepositoryGetter: gitRepositoryGetter}
+}
+
 func (hi *HelmInstallation) SetNext(next runtime.ReconcilerOperation) {
 	hi.next = next
 }
@@ -58,6 +63,9 @@ func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *
 		Name:      module.GetName(),
 	})
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return hi.next.Reconcile(ctx, module)
+		}
 		l.Error(err, "Error getting git repository")
 		return runtime.RequeueOnErr(ctx, err)
 	}
@@ -65,7 +73,7 @@ func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *
 	artifact := repo.GetArtifact()
 	if artifact == nil {
 		l.Info("The artifact is not ready")
-		return runtime.Finish()
+		return hi.next.Reconcile(ctx, module)
 	}
 
 	u, err := url.Parse(artifact.URL)

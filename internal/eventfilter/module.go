@@ -1,4 +1,4 @@
-package predicate
+package eventfilter
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -7,7 +7,7 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 )
 
-var moduleLog = ctrl.Log.WithName("predicate").
+var moduleLog = ctrl.Log.WithName("eventfilter").
 	WithValues("name", "modules", "version", "deploy.charlescd.io/v1alpha1").
 	V(1)
 
