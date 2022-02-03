@@ -32,3 +32,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - source.toolkit.fluxcd.io
+  resources:
+  - gitrepositories
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

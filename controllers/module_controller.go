@@ -21,13 +21,16 @@ import (
 
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	filter "github.com/tiagoangelozup/charles-alpha/internal/eventfilter"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
+	"github.com/tiagoangelozup/charles-alpha/pkg/usecase"
 )
 
 var logger = ctrl.Log.WithName("controller").WithName("module")
@@ -38,11 +41,13 @@ type ModuleGetter interface {
 
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
-	ModuleAdapter
-	Predicates
+	DesiredState     *usecase.DesiredState
+	HelmInstallation *usecase.HelmInstallation
+
 	ModuleGetter ModuleGetter
 }
 
+//+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=deploy.charlescd.io,resources=modules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=deploy.charlescd.io,resources=modules/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=deploy.charlescd.io,resources=modules/finalizers,verbs=update
@@ -57,6 +62,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	l.Info("Reconciling...")
 	module, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			// Module resource not found. Ignoring since object must be deleted
+			return runtime.Finish()
+		}
 		l.Error(err, "Error getting resource with desired module state")
 		return runtime.RequeueOnErr(ctx, err)
 	}
@@ -72,7 +81,10 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&deployv1alpha1.Module{}).
 		Owns(&sourcev1.GitRepository{}).
-		WithEventFilter(predicate.Or(r.PredicateModule, r.PredicateRepoStatus)).
+		WithEventFilter(predicate.Or(
+			&filter.RepoStatus{},
+			&filter.Module{},
+		)).
 		WithLogger(logr.Discard()).
 		Complete(r)
 }
