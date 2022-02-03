@@ -1,3 +1,8 @@
 - op: add
-  path: /spec/template/spec/serviceAccountName
+  path: "/spec/template/spec/serviceAccountName"
   value: source-controller
+- op: remove
+  path: "/spec/template/spec/containers/0/args/5"
+- op: add
+  path: "/spec/template/spec/containers/0/args/-"
+  value: --storage-adv-addr=charles-alpha-source-controller.$(RUNTIME_NAMESPACE).svc.cluster.local.
