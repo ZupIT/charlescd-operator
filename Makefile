@@ -85,16 +85,15 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-wire: ## Compile-time dependency injection.
-	go get -d github.com/google/wire/cmd/wire@v0.5.0
-	go generate ./...
+inject: wire ## Compile-time dependency injection.
+	$(WIRE) ./...
 
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
-build: generate wire fmt vet ## Build manager binary.
+build: generate inject fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -129,6 +128,10 @@ controller-gen: ## Download controller-gen locally if necessary.
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+
+WIRE = $(shell pwd)/bin/wire
+wire: ## Download wire locally if necessary.
+	$(call go-get-tool,$(WIRE),github.com/google/wire/cmd/wire@v0.5.0)
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
