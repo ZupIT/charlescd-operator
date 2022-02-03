@@ -23,7 +23,7 @@ type (
 		transformers *Transformers
 		filters      *Filters
 
-		next runtime.ReconcilerOperation
+		next runtime.Reconciler
 	}
 	Manifests interface {
 		Defaults(ctx context.Context) (mf.Manifest, error)
@@ -41,7 +41,7 @@ func NewDesiredState(manifests Manifests, transformers *Transformers, filters *F
 	return &DesiredState{manifests: manifests, transformers: transformers, filters: filters}
 }
 
-func (ds *DesiredState) SetNext(next runtime.ReconcilerOperation) {
+func (ds *DesiredState) SetNext(next runtime.Reconciler) {
 	ds.next = next
 }
 

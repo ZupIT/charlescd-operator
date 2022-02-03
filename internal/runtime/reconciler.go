@@ -28,24 +28,24 @@ import (
 
 var logger = ctrl.Log.WithName("runtime").WithName("reconcile")
 
-type ReconcilerOperation interface {
+type Reconciler interface {
 	Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error)
-	SetNext(next ReconcilerOperation)
+	SetNext(next Reconciler)
 }
 
-func Operations(operations ...ReconcilerOperation) ReconcilerOperation {
-	operations = append(operations, &doNothing{})
-	operations = append([]ReconcilerOperation{&trace{}}, operations...)
-	var last ReconcilerOperation
-	for i := len(operations) - 1; i >= 0; i-- {
-		current := operations[i]
+func Reconcilers(reconcilers ...Reconciler) Reconciler {
+	reconcilers = append(reconcilers, &doNothing{})
+	reconcilers = append([]Reconciler{&trace{}}, reconcilers...)
+	var last Reconciler
+	for i := len(reconcilers) - 1; i >= 0; i-- {
+		current := reconcilers[i]
 		current.SetNext(last)
 		last = current
 	}
 	return last
 }
 
-type trace struct{ next ReconcilerOperation }
+type trace struct{ next Reconciler }
 
 func (t *trace) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	span := tracing.SpanFromContext(ctx)
@@ -67,7 +67,7 @@ func (t *trace) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, 
 	return result, nil
 }
 
-func (t *trace) SetNext(next ReconcilerOperation) {
+func (t *trace) SetNext(next Reconciler) {
 	t.next = next
 }
 
@@ -77,4 +77,4 @@ func (d *doNothing) Reconcile(context.Context, client.Object) (ctrl.Result, erro
 	return Finish()
 }
 
-func (d *doNothing) SetNext(ReconcilerOperation) {}
+func (d *doNothing) SetNext(Reconciler) {}

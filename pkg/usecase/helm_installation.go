@@ -35,14 +35,14 @@ type HelmInstallation struct {
 	GitRepositoryGetter GitRepositoryGetter
 	Helm                Helm
 
-	next runtime.ReconcilerOperation
+	next runtime.Reconciler
 }
 
 func NewHelmInstallation(gitRepositoryGetter GitRepositoryGetter) *HelmInstallation {
 	return &HelmInstallation{GitRepositoryGetter: gitRepositoryGetter}
 }
 
-func (hi *HelmInstallation) SetNext(next runtime.ReconcilerOperation) {
+func (hi *HelmInstallation) SetNext(next runtime.Reconciler) {
 	hi.next = next
 }
 
@@ -82,7 +82,7 @@ func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *
 		return runtime.RequeueOnErr(ctx, err)
 	}
 
-	filepath := "." + u.Path
+	filepath := os.TempDir() + u.Path
 	if err = downloadArtifact(ctx, filepath, artifact); err != nil {
 		l.Error(err, "Error downloading artifact")
 		return runtime.RequeueOnErr(ctx, err)

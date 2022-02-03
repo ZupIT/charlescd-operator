@@ -70,7 +70,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return runtime.RequeueOnErr(ctx, err)
 	}
 
-	return runtime.Operations(
+	return runtime.Reconcilers(
 		r.DesiredState,
 		r.HelmInstallation,
 	).Reconcile(ctx, module)
