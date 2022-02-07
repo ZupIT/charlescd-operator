@@ -74,43 +74,27 @@ func TestOperations(t *testing.T) {
 	})
 }
 
-type withoutError struct{ next runtime.Reconciler }
+type withoutError struct{ runtime.ReconcilerFuncs }
 
 func (w *withoutError) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	logr.FromContext(ctx).V(0).Info(fmt.Sprintf("%T", w))
-	return w.next.Reconcile(ctx, obj)
+	return w.Next(ctx, obj)
 }
 
-func (w *withoutError) SetNext(next runtime.Reconciler) {
-	w.next = next
-}
-
-type withError struct{ next runtime.Reconciler }
+type withError struct{ runtime.ReconcilerFuncs }
 
 func (w *withError) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	return ctrl.Result{}, errors.New("reconcile with error")
 }
 
-func (w *withError) SetNext(next runtime.Reconciler) {
-	w.next = next
-}
-
-type withRequeue struct{ next runtime.Reconciler }
+type withRequeue struct{ runtime.ReconcilerFuncs }
 
 func (w *withRequeue) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
-func (w *withRequeue) SetNext(next runtime.Reconciler) {
-	w.next = next
-}
-
-type withRequeueIn2min struct{ next runtime.Reconciler }
+type withRequeueIn2min struct{ runtime.ReconcilerFuncs }
 
 func (w *withRequeueIn2min) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
-}
-
-func (w *withRequeueIn2min) SetNext(next runtime.Reconciler) {
-	w.next = next
 }

@@ -21,6 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	SourceReady string = "SourceReady"
+)
+
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
 	Repository Repository           `json:"repository"`
@@ -50,8 +54,22 @@ type Helm struct {
 }
 
 // ModuleStatus defines the observed state of Module
-type ModuleStatus struct { // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+type ModuleStatus struct {
+	// The phase of a Module is a simple, high-level summary of where the Module is in its lifecycle.
+	// +optional
+	Phase string `json:"phase,omitempty"`
+
+	// +optional
+	Source *Source `json:"source,omitempty"`
+
+	// Represents the latest available observations of a Module's current state.
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+}
+
+type Source struct {
+	Path string `json:"path,omitempty"`
 }
 
 //+kubebuilder:object:root=true

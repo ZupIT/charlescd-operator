@@ -1,4 +1,4 @@
-package usecase
+package module
 
 import (
 	"context"
@@ -14,16 +14,16 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
 )
 
-var logger = ctrl.Log.WithName("internal").WithName("usecase")
+var logger = ctrl.Log.WithName("internal").WithName("module")
 
 type (
 	DesiredState struct {
-		manifests Manifests
+		runtime.ReconcilerFuncs
 
-		transformers *Transformers
 		filters      *Filters
+		transformers *Transformers
 
-		next runtime.Reconciler
+		manifests Manifests
 	}
 	Manifests interface {
 		Defaults(ctx context.Context) (mf.Manifest, error)
@@ -37,51 +37,47 @@ type (
 	}
 )
 
-func NewDesiredState(manifests Manifests, transformers *Transformers, filters *Filters) *DesiredState {
-	return &DesiredState{manifests: manifests, transformers: transformers, filters: filters}
+func NewDesiredState(filters *Filters, transformers *Transformers, manifests Manifests) *DesiredState {
+	return &DesiredState{filters: filters, transformers: transformers, manifests: manifests}
 }
 
-func (ds *DesiredState) SetNext(next runtime.Reconciler) {
-	ds.next = next
-}
-
-func (ds *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (d *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	if module, ok := obj.(*deployv1alpha1.Module); ok {
-		return ds.EnsureDesiredState(ctx, module)
+		return d.reconcile(ctx, module)
 	}
-	return ds.next.Reconcile(ctx, obj)
+	return d.Next(ctx, obj)
 }
 
-func (ds *DesiredState) EnsureDesiredState(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (d *DesiredState) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	l := logger.WithValues("trace", span)
 
-	manifests, err := ds.manifests.Defaults(ctx)
+	manifests, err := d.manifests.Defaults(ctx)
 	if err != nil {
 		l.Error(err, "Error reading YAML manifests")
-		return runtime.RequeueOnErr(ctx, err)
+		return d.RequeueOnErr(ctx, err)
 	}
 
 	// filters unnecessary manifests
 	manifests = manifests.Filter(
-		ds.filters.FilterGitRepository(module),
+		d.filters.FilterGitRepository(module),
 	)
 
 	// transform manifests to desired state
 	if manifests, err = manifests.Transform(
-		ds.transformers.TransformMetadata(module),
-		ds.transformers.TransformGitRepository(module),
+		d.transformers.TransformMetadata(module),
+		d.transformers.TransformGitRepository(module),
 	); err != nil {
 		l.Error(err, "Error transforming a manifest resource")
-		return runtime.RequeueOnErr(ctx, err)
+		return d.RequeueOnErr(ctx, err)
 	}
 
 	// apply desired state
 	if err = manifests.Apply(); err != nil {
 		l.Error(err, "Error applying changes to resources in manifest")
-		return runtime.RequeueOnErr(ctx, err)
+		return d.RequeueOnErr(ctx, err)
 	}
 
-	return ds.next.Reconcile(ctx, module)
+	return d.Next(ctx, module)
 }

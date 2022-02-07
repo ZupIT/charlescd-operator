@@ -18,7 +18,7 @@ package runtime
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,53 +28,61 @@ import (
 
 var logger = ctrl.Log.WithName("runtime").WithName("reconcile")
 
-type Reconciler interface {
-	Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error)
-	SetNext(next Reconciler)
-}
+type (
+	Reconciler interface {
+		Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error)
+		Next(ctx context.Context, obj client.Object) (ctrl.Result, error)
+		setNext(next Reconciler)
+	}
+	ReconcilerFuncs struct {
+		ReconcilerResult
+		next Reconciler
+	}
+	ReconcilerResult struct{}
+)
 
 func Reconcilers(reconcilers ...Reconciler) Reconciler {
-	reconcilers = append(reconcilers, &doNothing{})
+	reconcilers = append(reconcilers, &finisher{})
 	reconcilers = append([]Reconciler{&trace{}}, reconcilers...)
 	var last Reconciler
 	for i := len(reconcilers) - 1; i >= 0; i-- {
 		current := reconcilers[i]
-		current.SetNext(last)
+		current.setNext(last)
 		last = current
 	}
 	return last
 }
 
-type trace struct{ next Reconciler }
+func (r *ReconcilerFuncs) setNext(next Reconciler) {
+	r.next = next
+}
 
-func (t *trace) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	span := tracing.SpanFromContext(ctx)
-	l := logger.WithValues("trace", span)
-	l.Info("Reconciler has been triggered")
-	result, err := t.next.Reconcile(ctx, obj)
-	switch {
-	case err != nil:
-		l.Error(err, "Reconciler error")
-		return result, err
-	case result.RequeueAfter > 0:
-		l.Info("Successfully reconciled!", "requeue", fmt.Sprintf("in %s", result.RequeueAfter))
-		return result, nil
-	case result.Requeue:
-		l.Info("Successfully reconciled!", "requeue", "now")
-		return result, nil
+func (r *ReconcilerFuncs) Next(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	return r.next.Reconcile(ctx, obj)
+}
+
+func (r *ReconcilerResult) Finish() (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+func (r *ReconcilerResult) Requeue() (ctrl.Result, error) {
+	return ctrl.Result{Requeue: true}, nil
+}
+
+func (r *ReconcilerResult) RequeueAfter(duration time.Duration) (ctrl.Result, error) {
+	return ctrl.Result{RequeueAfter: duration}, nil
+}
+
+func (r *ReconcilerResult) RequeueOnErr(ctx context.Context, err error) (ctrl.Result, error) {
+	if span := tracing.SpanFromContext(ctx); span != nil && err != nil {
+		span.SetError(err)
 	}
-	l.Info("Successfully reconciled!")
-	return result, nil
+	return ctrl.Result{}, err
 }
 
-func (t *trace) SetNext(next Reconciler) {
-	t.next = next
+func (r *ReconcilerResult) RequeueOnErrAfter(ctx context.Context, err error, duration time.Duration) (ctrl.Result, error) {
+	if span := tracing.SpanFromContext(ctx); span != nil && err != nil {
+		span.SetError(err)
+	}
+	return ctrl.Result{RequeueAfter: duration}, err
 }
-
-type doNothing struct{}
-
-func (d *doNothing) Reconcile(context.Context, client.Object) (ctrl.Result, error) {
-	return Finish()
-}
-
-func (d *doNothing) SetNext(Reconciler) {}

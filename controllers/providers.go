@@ -19,32 +19,31 @@ package controllers
 import (
 	"github.com/google/wire"
 
+	"github.com/tiagoangelozup/charles-alpha/internal/client"
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
-	"github.com/tiagoangelozup/charles-alpha/internal/module"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
-	"github.com/tiagoangelozup/charles-alpha/internal/source"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
+	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
-	"github.com/tiagoangelozup/charles-alpha/pkg/usecase"
 )
 
 var providers = wire.NewSet(
+	NewModuleReconciler,
 	reconcilers,
+	client.Providers,
 	filter.Providers,
 	manifests.Providers,
 	module.Providers,
 	object.Providers,
 	runtime.Providers,
-	source.Providers,
 	transformer.Providers,
-	usecase.Providers,
-	wire.Bind(new(ModuleGetter), new(*module.Service)),
+	wire.Bind(new(module.GitRepositoryGetter), new(*client.GitRepository)),
+	wire.Bind(new(module.Manifests), new(*manifests.Service)),
+	wire.Bind(new(module.StatusWriter), new(*client.Module)),
+	wire.Bind(new(ModuleGetter), new(*client.Module)),
 	wire.Bind(new(transformer.ObjectConverter), new(*object.UnstructuredConverter)),
 	wire.Bind(new(transformer.ObjectReference), new(*object.Reference)),
-	wire.Bind(new(usecase.GitRepositoryGetter), new(*source.Service)),
-	wire.Bind(new(usecase.Manifests), new(*manifests.Service)),
-	wire.Struct(new(ModuleReconciler), "*"),
 )
 
 func reconcilers(m *ModuleReconciler) []Reconciler {

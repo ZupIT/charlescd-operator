@@ -30,7 +30,7 @@ import (
 	filter "github.com/tiagoangelozup/charles-alpha/internal/eventfilter"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
-	"github.com/tiagoangelozup/charles-alpha/pkg/usecase"
+	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 )
 
 var logger = ctrl.Log.WithName("controller").WithName("module")
@@ -41,10 +41,16 @@ type ModuleGetter interface {
 
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
-	DesiredState     *usecase.DesiredState
-	HelmInstallation *usecase.HelmInstallation
+	runtime.ReconcilerResult
+
+	DesiredState     *module.DesiredState
+	HelmInstallation *module.HelmInstallation
 
 	ModuleGetter ModuleGetter
+}
+
+func NewModuleReconciler(desiredState *module.DesiredState, helmInstallation *module.HelmInstallation, moduleGetter ModuleGetter) *ModuleReconciler {
+	return &ModuleReconciler{DesiredState: desiredState, HelmInstallation: helmInstallation, ModuleGetter: moduleGetter}
 }
 
 //+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
@@ -60,20 +66,20 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	l := logger.WithValues("trace", span)
 
 	l.Info("Reconciling...")
-	module, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
+	m, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Module resource not found. Ignoring since object must be deleted
-			return runtime.Finish()
+			return r.Finish()
 		}
 		l.Error(err, "Error getting resource with desired module state")
-		return runtime.RequeueOnErr(ctx, err)
+		return r.RequeueOnErr(ctx, err)
 	}
 
 	return runtime.Reconcilers(
 		r.DesiredState,
 		r.HelmInstallation,
-	).Reconcile(ctx, module)
+	).Reconcile(ctx, m)
 }
 
 // SetupWithManager sets up the controller with the Manager.

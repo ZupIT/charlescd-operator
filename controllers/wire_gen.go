@@ -8,20 +8,36 @@ package controllers
 
 import (
 	"github.com/manifestival/client-go-client"
+	client2 "github.com/tiagoangelozup/charles-alpha/internal/client"
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
-	"github.com/tiagoangelozup/charles-alpha/internal/module"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
-	"github.com/tiagoangelozup/charles-alpha/internal/source"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
+	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
-	"github.com/tiagoangelozup/charles-alpha/pkg/usecase"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // Injectors from wire.go:
 
 func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
+	gitRepository := &filter.GitRepository{}
+	filters := &module.Filters{
+		GitRepository: gitRepository,
+	}
+	scheme := runtime.Scheme(managerManager)
+	unstructuredConverter := &object.UnstructuredConverter{
+		Scheme: scheme,
+	}
+	transformerGitRepository := transformer.NewGitRepository(unstructuredConverter)
+	reference := &object.Reference{
+		Scheme: scheme,
+	}
+	metadata := transformer.NewMetadata(reference)
+	transformers := &module.Transformers{
+		GitRepository: transformerGitRepository,
+		Metadata:      metadata,
+	}
 	config := runtime.Config(managerManager)
 	manifestivalClient, err := client.NewClient(config)
 	if err != nil {
@@ -30,37 +46,12 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	service := &manifests.Service{
 		Client: manifestivalClient,
 	}
-	scheme := runtime.Scheme(managerManager)
-	unstructuredConverter := &object.UnstructuredConverter{
-		Scheme: scheme,
-	}
-	gitRepository := transformer.NewGitRepository(unstructuredConverter)
-	reference := &object.Reference{
-		Scheme: scheme,
-	}
-	metadata := transformer.NewMetadata(reference)
-	transformers := &usecase.Transformers{
-		GitRepository: gitRepository,
-		Metadata:      metadata,
-	}
-	filterGitRepository := &filter.GitRepository{}
-	filters := &usecase.Filters{
-		GitRepository: filterGitRepository,
-	}
-	desiredState := usecase.NewDesiredState(service, transformers, filters)
+	desiredState := module.NewDesiredState(filters, transformers, service)
 	clientClient := runtime.Client(managerManager)
-	sourceService := &source.Service{
-		Client: clientClient,
-	}
-	helmInstallation := usecase.NewHelmInstallation(sourceService)
-	moduleService := &module.Service{
-		Client: clientClient,
-	}
-	moduleReconciler := &ModuleReconciler{
-		DesiredState:     desiredState,
-		HelmInstallation: helmInstallation,
-		ModuleGetter:     moduleService,
-	}
+	clientGitRepository := client2.NewGitRepository(clientClient)
+	clientModule := client2.NewModule(clientClient)
+	helmInstallation := module.NewHelmInstallation(clientGitRepository, clientModule)
+	moduleReconciler := NewModuleReconciler(desiredState, helmInstallation, clientModule)
 	v := reconcilers(moduleReconciler)
 	return v, nil
 }

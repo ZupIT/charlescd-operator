@@ -1,4 +1,4 @@
-package usecase
+package module
 
 import (
 	"context"
@@ -31,65 +31,75 @@ type GitRepositoryGetter interface {
 	GetGitRepository(ctx context.Context, key client.ObjectKey) (*v1beta1.GitRepository, error)
 }
 
+type StatusWriter interface {
+	UpdateModuleStatus(ctx context.Context, module *deployv1alpha1.Module) error
+}
+
 type HelmInstallation struct {
-	GitRepositoryGetter GitRepositoryGetter
-	Helm                Helm
+	runtime.ReconcilerFuncs
 
-	next runtime.Reconciler
+	git    GitRepositoryGetter
+	status StatusWriter
 }
 
-func NewHelmInstallation(gitRepositoryGetter GitRepositoryGetter) *HelmInstallation {
-	return &HelmInstallation{GitRepositoryGetter: gitRepositoryGetter}
+func NewHelmInstallation(git GitRepositoryGetter, status StatusWriter) *HelmInstallation {
+	return &HelmInstallation{git: git, status: status}
 }
 
-func (hi *HelmInstallation) SetNext(next runtime.Reconciler) {
-	hi.next = next
-}
-
-func (hi *HelmInstallation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (h *HelmInstallation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	if module, ok := obj.(*deployv1alpha1.Module); ok {
-		return hi.EnsureHelmInstallation(ctx, module)
+		return h.reconcile(ctx, module)
 	}
-	return hi.next.Reconcile(ctx, obj)
+	return h.Next(ctx, obj)
 }
 
-func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	l := logger.WithValues("trace", span)
 
-	repo, err := hi.GitRepositoryGetter.GetGitRepository(ctx, types.NamespacedName{
+	repo, err := h.git.GetGitRepository(ctx, types.NamespacedName{
 		Namespace: module.GetNamespace(),
 		Name:      module.GetName(),
 	})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return hi.next.Reconcile(ctx, module)
+			return h.Next(ctx, module)
 		}
 		l.Error(err, "Error getting git repository")
-		return runtime.RequeueOnErr(ctx, err)
+		return h.RequeueOnErr(ctx, err)
 	}
 
 	artifact := repo.GetArtifact()
 	if artifact == nil {
 		l.Info("The artifact is not ready")
-		return hi.next.Reconcile(ctx, module)
+		return h.Next(ctx, module)
 	}
 
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		l.Error(err, "Error reading artifact address")
-		return runtime.RequeueOnErr(ctx, err)
+		if module.SetSourceError("AddressResolutionError", err) {
+			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+		}
+		return h.RequeueOnErr(ctx, err)
 	}
 
 	filepath := os.TempDir() + u.Path
 	if err = downloadArtifact(ctx, filepath, artifact); err != nil {
 		l.Error(err, "Error downloading artifact")
-		return runtime.RequeueOnErr(ctx, err)
+		if module.SetSourceError("DownloadError", err) {
+			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+		}
+		return h.RequeueOnErr(ctx, err)
+	}
+
+	if module.SetSourceReady(filepath) {
+		return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 	}
 
 	//	TODO: implement Helm client
-	//	manifest, err := hi.Helm.Template(module.GetName(), filepath, module.Spec.Values)
+	//	manifest, err := h.Helm.Template(module.GetName(), filepath, module.Spec.Values)
 	//	if err != nil {
 	//		l.Error(err, "Error rendering Helm chart templates")
 	//		return runtime.Finish()
@@ -100,7 +110,7 @@ func (hi *HelmInstallation) EnsureHelmInstallation(ctx context.Context, module *
 	//		return runtime.RequeueOnErr(ctx, err)
 	//	}
 
-	return hi.next.Reconcile(ctx, module)
+	return h.Next(ctx, module)
 }
 
 func downloadArtifact(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
@@ -115,6 +125,8 @@ func downloadArtifact(ctx context.Context, filepath string, artifact *v1beta1.Ar
 	span, ctx = tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	l = logger.WithValues("trace", span)
+	// url := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
+	// res, err := http.Get(url)
 	res, err := http.Get(artifact.URL)
 	if err != nil {
 		return err

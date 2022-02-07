@@ -1,4 +1,4 @@
-package usecase
+package module
 
 import "github.com/google/wire"
 
