@@ -43,14 +43,15 @@ type ModuleGetter interface {
 type ModuleReconciler struct {
 	runtime.ReconcilerResult
 
+	Status           *module.Status
 	DesiredState     *module.DesiredState
 	HelmInstallation *module.HelmInstallation
 
 	ModuleGetter ModuleGetter
 }
 
-func NewModuleReconciler(desiredState *module.DesiredState, helmInstallation *module.HelmInstallation, moduleGetter ModuleGetter) *ModuleReconciler {
-	return &ModuleReconciler{DesiredState: desiredState, HelmInstallation: helmInstallation, ModuleGetter: moduleGetter}
+func NewModuleReconciler(status *module.Status, desiredState *module.DesiredState, helmInstallation *module.HelmInstallation, moduleGetter ModuleGetter) *ModuleReconciler {
+	return &ModuleReconciler{Status: status, DesiredState: desiredState, HelmInstallation: helmInstallation, ModuleGetter: moduleGetter}
 }
 
 //+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
@@ -65,7 +66,6 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	defer span.Finish()
 	l := logger.WithValues("trace", span)
 
-	l.Info("Reconciling...")
 	m, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -77,6 +77,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	return runtime.Reconcilers(
+		r.Status,
 		r.DesiredState,
 		r.HelmInstallation,
 	).Reconcile(ctx, m)

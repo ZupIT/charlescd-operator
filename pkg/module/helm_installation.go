@@ -11,9 +11,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/source-controller/api/v1beta1"
 	mf "github.com/manifestival/manifestival"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,10 +32,6 @@ type Helm interface {
 
 type GitRepositoryGetter interface {
 	GetGitRepository(ctx context.Context, key client.ObjectKey) (*v1beta1.GitRepository, error)
-}
-
-type StatusWriter interface {
-	UpdateModuleStatus(ctx context.Context, module *deployv1alpha1.Module) error
 }
 
 type HelmInstallation struct {
@@ -70,6 +69,20 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 		return h.RequeueOnErr(ctx, err)
 	}
 
+	if c := apimeta.FindStatusCondition(repo.Status.Conditions, meta.ReadyCondition); c != nil {
+		if c.Status == metav1.ConditionFalse {
+			if diff, updated := module.SetSourceError("GitRepositoryError", c.Message); updated {
+				l.Info("Status changed", "diff", diff)
+				return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+			}
+		}
+	} else {
+		if diff, updated := module.RemoveSource(); updated {
+			l.Info("Status changed", "diff", diff)
+			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+		}
+	}
+
 	artifact := repo.GetArtifact()
 	if artifact == nil {
 		l.Info("The artifact is not ready")
@@ -79,7 +92,8 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		l.Error(err, "Error reading artifact address")
-		if module.SetSourceError("AddressResolutionError", err) {
+		if diff, updated := module.SetSourceError("AddressResolutionError", err.Error()); updated {
+			l.Info("Status changed", "diff", diff)
 			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 		}
 		return h.RequeueOnErr(ctx, err)
@@ -88,13 +102,15 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 	filepath := os.TempDir() + u.Path
 	if err = downloadArtifact(ctx, filepath, artifact); err != nil {
 		l.Error(err, "Error downloading artifact")
-		if module.SetSourceError("DownloadError", err) {
+		if diff, updated := module.SetSourceError("DownloadError", err.Error()); updated {
+			l.Info("Status changed", "diff", diff)
 			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 		}
 		return h.RequeueOnErr(ctx, err)
 	}
 
-	if module.SetSourceReady(filepath) {
+	if diff, updated := module.SetSourceReady(filepath); updated {
+		l.Info("Status changed", "diff", diff)
 		return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 	}
 

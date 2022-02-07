@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (in *Module) SetSourceReady(path string) bool {
+func (in *Module) SetSourceReady(path string) (string, bool) {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceReady,
@@ -15,23 +15,52 @@ func (in *Module) SetSourceReady(path string) bool {
 		Message: "Sources are available at: " + path,
 	})
 	in.Status.Source = &Source{Path: path}
+	in.updatePhase()
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceError(reason string, err error) bool {
+func (in *Module) SetSourceError(reason, message string) (string, bool) {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceReady,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: err.Error(),
+		Message: message,
 	})
 	in.Status.Source = nil
+	in.updatePhase()
 	return updated(old, in)
 }
 
-func updated(old, new client.Object) bool {
+func (in *Module) RemoveSource() (string, bool) {
+	old := in.DeepCopy()
+	meta.RemoveStatusCondition(&in.Status.Conditions, SourceReady)
+	in.Status.Source = nil
+	in.updatePhase()
+	return updated(old, in)
+}
+
+func (in *Module) UpdatePhase() (string, bool) {
+	old := in.DeepCopy()
+	in.updatePhase()
+	return updated(old, in)
+}
+
+func (in *Module) updatePhase() {
+	switch conditions := in.Status.Conditions; {
+	case meta.IsStatusConditionTrue(conditions, SourceReady):
+		in.Status.Phase = "Ready"
+	case meta.IsStatusConditionFalse(conditions, SourceReady):
+		in.Status.Phase = "Failed"
+	default:
+		in.Status.Phase = "Processing"
+	}
+}
+
+func updated(old, new client.Object) (diff string, updated bool) {
 	patch := client.MergeFrom(old)
 	data, _ := patch.Data(new)
-	return string(data) != "{}"
+	diff = string(data)
+	updated = diff != "{}"
+	return diff, updated
 }

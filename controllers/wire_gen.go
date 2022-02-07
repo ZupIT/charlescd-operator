@@ -7,8 +7,8 @@
 package controllers
 
 import (
-	"github.com/manifestival/client-go-client"
-	client2 "github.com/tiagoangelozup/charles-alpha/internal/client"
+	client2 "github.com/manifestival/client-go-client"
+	"github.com/tiagoangelozup/charles-alpha/internal/client"
 	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
@@ -21,6 +21,9 @@ import (
 // Injectors from wire.go:
 
 func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
+	clientClient := runtime.Client(managerManager)
+	clientModule := client.NewModule(clientClient)
+	status := module.NewStatus(clientModule)
 	gitRepository := &filter.GitRepository{}
 	filters := &module.Filters{
 		GitRepository: gitRepository,
@@ -39,7 +42,7 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		Metadata:      metadata,
 	}
 	config := runtime.Config(managerManager)
-	manifestivalClient, err := client.NewClient(config)
+	manifestivalClient, err := client2.NewClient(config)
 	if err != nil {
 		return nil, err
 	}
@@ -47,11 +50,9 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		Client: manifestivalClient,
 	}
 	desiredState := module.NewDesiredState(filters, transformers, service)
-	clientClient := runtime.Client(managerManager)
-	clientGitRepository := client2.NewGitRepository(clientClient)
-	clientModule := client2.NewModule(clientClient)
+	clientGitRepository := client.NewGitRepository(clientClient)
 	helmInstallation := module.NewHelmInstallation(clientGitRepository, clientModule)
-	moduleReconciler := NewModuleReconciler(desiredState, helmInstallation, clientModule)
+	moduleReconciler := NewModuleReconciler(status, desiredState, helmInstallation, clientModule)
 	v := reconcilers(moduleReconciler)
 	return v, nil
 }

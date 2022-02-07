@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
 type Module struct{ client client.Client }
@@ -24,8 +25,11 @@ func (s *Module) GetModule(ctx context.Context, key client.ObjectKey) (*deployv1
 }
 
 func (s *Module) UpdateModuleStatus(ctx context.Context, module *deployv1alpha1.Module) error {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+
 	if err := s.client.Status().Update(ctx, module); err != nil {
-		return fmt.Errorf("failed to update Module status: %w", err)
+		return span.HandleError(fmt.Errorf("failed to update Module status: %w", err))
 	}
 	return nil
 }

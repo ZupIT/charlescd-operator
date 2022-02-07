@@ -74,6 +74,7 @@ type Source struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:JSONPath=".status.phase",name=Status,type=string
 
 // Module is the Schema for the modules API
 type Module struct {
