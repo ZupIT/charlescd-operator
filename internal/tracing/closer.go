@@ -14,12 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package tracing
 
-import "github.com/google/wire"
+import (
+	"context"
+	"time"
 
-var Providers = wire.NewSet(
-	Client,
-	Scheme,
-	Config,
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
+
+type closer struct{ *tracesdk.TracerProvider }
+
+func (c *closer) Close() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	return c.shutdown(ctx)
+}
+
+func (c *closer) shutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+	if err := c.Shutdown(ctx); err != nil {
+		return err
+	}
+	return nil
+}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/angelokurtis/reconciler"
 	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/source-controller/api/v1beta1"
 	mf "github.com/manifestival/manifestival"
@@ -22,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -35,7 +35,7 @@ type GitRepositoryGetter interface {
 }
 
 type HelmInstallation struct {
-	runtime.ReconcilerFuncs
+	reconciler.Funcs
 
 	git    GitRepositoryGetter
 	status StatusWriter

@@ -29,7 +29,7 @@ func (s *Module) UpdateModuleStatus(ctx context.Context, module *deployv1alpha1.
 	defer span.Finish()
 
 	if err := s.client.Status().Update(ctx, module); err != nil {
-		return span.HandleError(fmt.Errorf("failed to update Module status: %w", err))
+		return span.Error(fmt.Errorf("failed to update Module status: %w", err))
 	}
 	return nil
 }

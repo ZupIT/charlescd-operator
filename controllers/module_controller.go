@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/angelokurtis/reconciler"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,8 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	filter "github.com/tiagoangelozup/charles-alpha/internal/eventfilter"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
+	"github.com/tiagoangelozup/charles-alpha/internal/event"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 )
@@ -41,7 +41,7 @@ type ModuleGetter interface {
 
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
-	runtime.ReconcilerResult
+	reconciler.Result
 
 	Status           *module.Status
 	DesiredState     *module.DesiredState
@@ -70,13 +70,13 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Module resource not found. Ignoring since object must be deleted
-			return r.Finish()
+			return r.Finish(ctx)
 		}
 		l.Error(err, "Error getting resource with desired module state")
 		return r.RequeueOnErr(ctx, err)
 	}
 
-	return runtime.Reconcilers(
+	return reconciler.Chain(
 		r.Status,
 		r.DesiredState,
 		r.HelmInstallation,
@@ -89,8 +89,8 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&deployv1alpha1.Module{}).
 		Owns(&sourcev1.GitRepository{}).
 		WithEventFilter(predicate.Or(
-			&filter.RepoStatus{},
-			&filter.Module{},
+			&event.RepoStatusPredicate{},
+			&event.ModulePredicate{},
 		)).
 		WithLogger(logr.Discard()).
 		Complete(r)

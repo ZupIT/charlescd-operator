@@ -26,7 +26,7 @@ func (s *Service) Defaults(ctx context.Context) (mf.Manifest, error) {
 	reader := bytes.NewReader(manifests)
 	m, err := mf.ManifestFrom(mf.Reader(reader), mf.UseClient(s.Client), mf.UseLogger(l))
 	if err != nil {
-		return mf.Manifest{}, span.HandleError(fmt.Errorf("failed to build deployments manifests: %w", err))
+		return mf.Manifest{}, span.Error(fmt.Errorf("failed to build deployments manifests: %w", err))
 	}
 	return m, nil
 }

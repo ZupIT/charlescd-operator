@@ -4,64 +4,53 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/opentracing/opentracing-go/log"
-	"github.com/uber/jaeger-client-go"
+	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-type (
-	Span struct {
-		opentracing.Span
-	}
-	Info struct {
-		OperationName string
-		TraceID       string
-		SpanID        string
-		ParentID      string
-		IsSampled     bool
-	}
-)
-
-func (s *Span) String() string {
-	i := s.Info()
-	return fmt.Sprintf("%s:%s:%s:%t", i.TraceID, i.SpanID, i.ParentID, i.IsSampled)
+type Span interface {
+	Log(logr.Logger) logr.Logger
+	Finish()
+	Error(err error) error
+	fmt.Stringer
 }
 
-func (s *Span) Info() *Info {
-	var operation string
-	if js, ok := s.Span.(*jaeger.Span); ok {
-		operation = js.OperationName()
+type defaultSpan struct{ trace.Span }
+
+func (s *defaultSpan) Log(logger logr.Logger) logr.Logger {
+	ctx := s.SpanContext()
+	if ctx.IsValid() {
+		return logger.WithValues("trace", s.String())
 	}
-	if jsc, ok := s.Context().(jaeger.SpanContext); ok {
-		return &Info{
-			OperationName: operation,
-			TraceID:       jsc.TraceID().String(),
-			SpanID:        jsc.SpanID().String(),
-			ParentID:      jsc.ParentID().String(),
-			IsSampled:     jsc.IsSampled(),
+	return logger
+}
+
+func (s *defaultSpan) Finish() { s.End() }
+
+func (s *defaultSpan) Error(err error) error {
+	if err != nil {
+		s.RecordError(err)
+		s.SetStatus(codes.Error, err.Error())
+		var serr *kerrors.StatusError
+		if errors.As(err, &serr) {
+			status := serr.Status()
+			s.SetAttributes(attribute.Int64("code", int64(status.Code)))
+			s.SetAttributes(attribute.String("reason", string(status.Reason)))
 		}
 	}
-	return nil
-}
-
-func (s *Span) SetError(err error) {
-	ext.Error.Set(s, true)
-	fields := make([]log.Field, 0)
-	fields = append(fields, log.String("event", "error"), log.String("message", err.Error()))
-
-	var serr *kerrors.StatusError
-	if errors.As(err, &serr) {
-		status := serr.Status()
-		fields = append(fields, log.Int32("code", status.Code), log.String("reason", string(status.Reason)))
-	}
-	s.LogFields(fields...)
-}
-
-func (s *Span) HandleError(err error) error {
-	if err != nil {
-		s.SetError(err)
-	}
 	return err
+}
+
+func (s *defaultSpan) String() string {
+	ctx := s.SpanContext()
+	if !ctx.IsValid() {
+		return ""
+	}
+	traceID := ctx.TraceID()
+	spanID := ctx.SpanID()
+	isSampled := ctx.IsSampled()
+	return fmt.Sprintf("%s:%s:%t", traceID, spanID, isSampled)
 }

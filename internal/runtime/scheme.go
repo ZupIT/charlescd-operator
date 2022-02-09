@@ -16,10 +16,11 @@ limitations under the License.
 
 package runtime
 
-import "github.com/google/wire"
-
-var Providers = wire.NewSet(
-	Client,
-	Scheme,
-	Config,
+import (
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+func Scheme(mgr manager.Manager) *runtime.Scheme {
+	return mgr.GetScheme()
+}

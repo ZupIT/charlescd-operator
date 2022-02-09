@@ -3,12 +3,12 @@ package module
 import (
 	"context"
 
+	"github.com/angelokurtis/reconciler"
 	mf "github.com/manifestival/manifestival"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
@@ -18,7 +18,7 @@ var logger = ctrl.Log.WithName("internal").WithName("module")
 
 type (
 	DesiredState struct {
-		runtime.ReconcilerFuncs
+		reconciler.Funcs
 
 		filters      *Filters
 		transformers *Transformers

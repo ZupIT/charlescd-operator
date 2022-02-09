@@ -3,16 +3,16 @@ package module
 import (
 	"context"
 
+	"github.com/angelokurtis/reconciler"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
 type Status struct {
-	runtime.ReconcilerFuncs
+	reconciler.Funcs
 	status StatusWriter
 }
 

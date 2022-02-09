@@ -1,4 +1,4 @@
-package eventfilter
+package event
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -11,9 +11,9 @@ var moduleLog = ctrl.Log.WithName("eventfilter").
 	WithValues("name", "modules", "version", "deploy.charlescd.io/v1alpha1").
 	V(1)
 
-type Module struct{}
+type ModulePredicate struct{}
 
-func (m *Module) Create(event event.CreateEvent) bool {
+func (m *ModulePredicate) Create(event event.CreateEvent) bool {
 	obj := event.Object
 	if obj == nil {
 		return false
@@ -25,7 +25,7 @@ func (m *Module) Create(event event.CreateEvent) bool {
 	return true
 }
 
-func (m *Module) Delete(event event.DeleteEvent) bool {
+func (m *ModulePredicate) Delete(event event.DeleteEvent) bool {
 	obj := event.Object
 	if obj == nil {
 		return false
@@ -37,7 +37,7 @@ func (m *Module) Delete(event event.DeleteEvent) bool {
 	return true
 }
 
-func (m *Module) Update(event event.UpdateEvent) bool {
+func (m *ModulePredicate) Update(event event.UpdateEvent) bool {
 	if event.ObjectOld == nil || event.ObjectNew == nil {
 		return false
 	}
@@ -51,7 +51,7 @@ func (m *Module) Update(event event.UpdateEvent) bool {
 	return true
 }
 
-func (m *Module) Generic(event event.GenericEvent) bool {
+func (m *ModulePredicate) Generic(event event.GenericEvent) bool {
 	obj := event.Object
 	if obj == nil {
 		return false

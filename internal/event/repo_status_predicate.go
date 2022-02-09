@@ -1,4 +1,4 @@
-package eventfilter
+package event
 
 import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
@@ -10,9 +10,9 @@ var repoStatusLog = ctrl.Log.WithName("eventfilter").
 	WithValues("name", "gitrepositories", "version", "source.toolkit.fluxcd.io/v1beta1").
 	V(1)
 
-type RepoStatus struct{}
+type RepoStatusPredicate struct{}
 
-func (g *RepoStatus) Create(event event.CreateEvent) bool {
+func (g *RepoStatusPredicate) Create(event event.CreateEvent) bool {
 	obj := event.Object
 	if obj == nil {
 		return false
@@ -29,7 +29,7 @@ func (g *RepoStatus) Create(event event.CreateEvent) bool {
 	return true
 }
 
-func (g *RepoStatus) Update(event event.UpdateEvent) bool {
+func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 	if event.ObjectOld == nil || event.ObjectNew == nil {
 		return false
 	}
@@ -54,7 +54,7 @@ func (g *RepoStatus) Update(event event.UpdateEvent) bool {
 	return false
 }
 
-func (g *RepoStatus) Delete(event event.DeleteEvent) bool {
+func (g *RepoStatusPredicate) Delete(event event.DeleteEvent) bool {
 	obj := event.Object
 	if obj == nil {
 		return false
@@ -66,6 +66,6 @@ func (g *RepoStatus) Delete(event event.DeleteEvent) bool {
 	return true
 }
 
-func (g *RepoStatus) Generic(event event.GenericEvent) bool {
+func (g *RepoStatusPredicate) Generic(event event.GenericEvent) bool {
 	return true
 }
