@@ -19,6 +19,7 @@ package tracing
 import (
 	"context"
 	"io"
+	"os"
 	"runtime"
 	"strings"
 
@@ -32,25 +33,33 @@ import (
 )
 
 const (
-	module  = "github.com/tiagoangelozup/charles-alpha"
-	service = "charles"
+	module      = "github.com/tiagoangelozup/charles-alpha"
+	service     = "charles"
+	envEndpoint = "OTEL_EXPORTER_JAEGER_ENDPOINT"
 )
 
 func Initialize() (io.Closer, error) {
-	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
-	if err != nil {
-		return nil, err
-	}
-	provider := tracesdk.NewTracerProvider(
-		tracesdk.WithBatcher(exporter),
+	options := []tracesdk.TracerProviderOption{
 		tracesdk.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(service),
 		)),
 		tracesdk.WithSampler(tracesdk.AlwaysSample()),
-	)
-	otel.SetTracerProvider(provider)
-	return &closer{TracerProvider: provider}, nil
+	}
+
+	endpoint, ok := os.LookupEnv(envEndpoint)
+	if ok {
+		collectorEndpoint := jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(endpoint))
+		e, err := jaeger.New(collectorEndpoint)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, tracesdk.WithBatcher(e))
+	}
+
+	tp := tracesdk.NewTracerProvider(options...)
+	otel.SetTracerProvider(tp)
+	return new(closer), nil
 }
 
 func SpanFromContext(ctx context.Context) Span {

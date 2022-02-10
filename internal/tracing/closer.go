@@ -20,22 +20,24 @@ import (
 	"context"
 	"time"
 
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-type closer struct{ *tracesdk.TracerProvider }
+type closer struct{}
 
 func (c *closer) Close() error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return c.shutdown(ctx)
-}
 
-func (c *closer) shutdown(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
-	if err := c.Shutdown(ctx); err != nil {
+	tp, ok := otel.GetTracerProvider().(*trace.TracerProvider)
+	if !ok {
+		return nil
+	}
+
+	if err := tp.Shutdown(ctx); err != nil {
 		return err
 	}
+
 	return nil
 }
