@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/angelokurtis/reconciler v1.0.0
 	github.com/fluxcd/pkg/apis/meta v0.10.2
-	github.com/fluxcd/source-controller/api v0.21.1
+	github.com/fluxcd/source-controller/api v0.21.2
 	github.com/go-logr/logr v1.2.2
 	github.com/google/wire v0.5.0
 	github.com/manifestival/client-go-client v0.5.0
