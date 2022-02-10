@@ -64,7 +64,7 @@ func NewModuleReconciler(status *module.Status, desiredState *module.DesiredStat
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l := logger.WithValues("trace", span)
+	log := span.Log(logger)
 
 	m, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
@@ -72,7 +72,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			// Module resource not found. Ignoring since object must be deleted
 			return r.Finish(ctx)
 		}
-		l.Error(err, "Error getting resource with desired module state")
+		log.Error(err, "Error getting resource with desired module state")
 		return r.RequeueOnErr(ctx, err)
 	}
 

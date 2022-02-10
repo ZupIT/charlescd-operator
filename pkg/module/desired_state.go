@@ -14,8 +14,6 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
 )
 
-var logger = ctrl.Log.WithName("internal").WithName("module")
-
 type (
 	DesiredState struct {
 		reconciler.Funcs
@@ -51,11 +49,11 @@ func (d *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.R
 func (d *DesiredState) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l := logger.WithValues("trace", span)
+	log := span.Log(logger)
 
 	manifests, err := d.manifests.Defaults(ctx)
 	if err != nil {
-		l.Error(err, "Error reading YAML manifests")
+		log.Error(err, "Error reading YAML manifests")
 		return d.RequeueOnErr(ctx, err)
 	}
 
@@ -69,13 +67,13 @@ func (d *DesiredState) reconcile(ctx context.Context, module *deployv1alpha1.Mod
 		d.transformers.TransformMetadata(module),
 		d.transformers.TransformGitRepository(module),
 	); err != nil {
-		l.Error(err, "Error transforming a manifest resource")
+		log.Error(err, "Error transforming a manifest resource")
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	// apply desired state
 	if err = manifests.Apply(); err != nil {
-		l.Error(err, "Error applying changes to resources in manifest")
+		log.Error(err, "Error applying changes to resources in manifest")
 		return d.RequeueOnErr(ctx, err)
 	}
 

@@ -22,9 +22,9 @@ type Service struct{ Client mf.Client }
 
 func (s *Service) Defaults(ctx context.Context) (mf.Manifest, error) {
 	span := tracing.SpanFromContext(ctx)
-	l := logger.WithValues("trace", span).V(1)
+	log := span.Log(logger).V(1)
 	reader := bytes.NewReader(manifests)
-	m, err := mf.ManifestFrom(mf.Reader(reader), mf.UseClient(s.Client), mf.UseLogger(l))
+	m, err := mf.ManifestFrom(mf.Reader(reader), mf.UseClient(s.Client), mf.UseLogger(log))
 	if err != nil {
 		return mf.Manifest{}, span.Error(fmt.Errorf("failed to build deployments manifests: %w", err))
 	}

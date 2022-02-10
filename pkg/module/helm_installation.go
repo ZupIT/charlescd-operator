@@ -55,7 +55,7 @@ func (h *HelmInstallation) Reconcile(ctx context.Context, obj client.Object) (ct
 func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l := logger.WithValues("trace", span)
+	log := span.Log(logger)
 
 	repo, err := h.git.GetGitRepository(ctx, types.NamespacedName{
 		Namespace: module.GetNamespace(),
@@ -65,35 +65,35 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 		if kerrors.IsNotFound(err) {
 			return h.Next(ctx, module)
 		}
-		l.Error(err, "Error getting git repository")
+		log.Error(err, "Error getting git repository")
 		return h.RequeueOnErr(ctx, err)
 	}
 
 	if c := apimeta.FindStatusCondition(repo.Status.Conditions, meta.ReadyCondition); c != nil {
 		if c.Status == metav1.ConditionFalse {
 			if diff, updated := module.SetSourceError("GitRepositoryError", c.Message); updated {
-				l.Info("Status changed", "diff", diff)
+				log.Info("Status changed", "diff", diff)
 				return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 			}
 		}
 	} else {
 		if diff, updated := module.RemoveSource(); updated {
-			l.Info("Status changed", "diff", diff)
+			log.Info("Status changed", "diff", diff)
 			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 		}
 	}
 
 	artifact := repo.GetArtifact()
 	if artifact == nil {
-		l.Info("The artifact is not ready")
+		log.Info("The artifact is not ready")
 		return h.Next(ctx, module)
 	}
 
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
-		l.Error(err, "Error reading artifact address")
+		log.Error(err, "Error reading artifact address")
 		if diff, updated := module.SetSourceError("AddressResolutionError", err.Error()); updated {
-			l.Info("Status changed", "diff", diff)
+			log.Info("Status changed", "diff", diff)
 			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 		}
 		return h.RequeueOnErr(ctx, err)
@@ -101,28 +101,28 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 
 	filepath := os.TempDir() + u.Path
 	if err = downloadArtifact(ctx, filepath, artifact); err != nil {
-		l.Error(err, "Error downloading artifact")
+		log.Error(err, "Error downloading artifact")
 		if diff, updated := module.SetSourceError("DownloadError", err.Error()); updated {
-			l.Info("Status changed", "diff", diff)
+			log.Info("Status changed", "diff", diff)
 			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 		}
 		return h.RequeueOnErr(ctx, err)
 	}
 
 	if diff, updated := module.SetSourceReady(filepath); updated {
-		l.Info("Status changed", "diff", diff)
+		log.Info("Status changed", "diff", diff)
 		return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
 	}
 
 	//	TODO: implement Helm client
 	//	manifest, err := h.Helm.Template(module.GetName(), filepath, module.Spec.Values)
 	//	if err != nil {
-	//		l.Error(err, "Error rendering Helm chart templates")
+	//		log.Error(err, "Error rendering Helm chart templates")
 	//		return runtime.Finish()
 	//	}
 	//
 	//	if err = manifest.Apply(); err != nil {
-	//		l.Error(err, "Error applying Helm chart changes")
+	//		log.Error(err, "Error applying Helm chart changes")
 	//		return runtime.RequeueOnErr(ctx, err)
 	//	}
 
@@ -131,16 +131,16 @@ func (h *HelmInstallation) reconcile(ctx context.Context, module *deployv1alpha1
 
 func downloadArtifact(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
 	span := tracing.SpanFromContext(ctx)
-	l := logger.WithValues("trace", span)
+	log := span.Log(logger)
 
 	if _, err := os.Stat(filepath); !errors.Is(err, os.ErrNotExist) && checksumIsValid(filepath, artifact.Checksum) {
-		l.Info("Artifact found locally", "path", filepath, "checksum", artifact.Checksum)
+		log.Info("Artifact found locally", "path", filepath, "checksum", artifact.Checksum)
 		return nil
 	}
 
 	span, ctx = tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l = logger.WithValues("trace", span)
+	log = span.Log(logger)
 	// url := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
 	// res, err := http.Get(url)
 	res, err := http.Get(artifact.URL)
@@ -163,7 +163,7 @@ func downloadArtifact(ctx context.Context, filepath string, artifact *v1beta1.Ar
 	if _, err = io.Copy(out, res.Body); err != nil {
 		return err
 	}
-	l.Info("Downloaded artifact", "path", filepath, "checksum", artifact.Checksum)
+	log.Info("Downloaded artifact", "path", filepath, "checksum", artifact.Checksum)
 	return nil
 }
 

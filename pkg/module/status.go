@@ -30,10 +30,10 @@ func (s *Status) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result,
 func (s *Status) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	l := logger.WithValues("trace", span)
+	log := span.Log(logger)
 
 	if diff, updated := module.UpdatePhase(); updated {
-		l.Info("Status changed", "diff", diff)
+		log.Info("Status changed", "diff", diff)
 		return s.RequeueOnErr(ctx, s.status.UpdateModuleStatus(ctx, module))
 	}
 	return s.Next(ctx, module)
