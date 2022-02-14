@@ -28,6 +28,8 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"go.opentelemetry.io/otel"
 )
@@ -68,9 +70,11 @@ func SpanFromContext(ctx context.Context) Span {
 }
 
 func StartSpanFromContext(ctx context.Context) (Span, context.Context) {
-	pc, _, _, _ := runtime.Caller(2)
+	pc, _, _, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
 	spanName := strings.Replace(funcName, module+"/", "", 1)
 	newCtx, span := otel.Tracer(service).Start(ctx, spanName)
-	return &defaultSpan{Span: span}, newCtx
+	s := &defaultSpan{Span: span}
+	log := ctrl.Log.WithName(spanName).WithValues("trace", s.String())
+	return s, logf.IntoContext(newCtx, log)
 }
