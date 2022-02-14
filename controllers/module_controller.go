@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
@@ -32,8 +33,6 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 )
-
-var logger = ctrl.Log.WithName("controller").WithName("module")
 
 type ModuleGetter interface {
 	GetModule(ctx context.Context, key client.ObjectKey) (*deployv1alpha1.Module, error)
@@ -45,13 +44,13 @@ type ModuleReconciler struct {
 
 	Status           *module.Status
 	DesiredState     *module.DesiredState
-	HelmInstallation *module.HelmInstallation
+	ArtifactDownload *module.ArtifactDownload
 
 	ModuleGetter ModuleGetter
 }
 
-func NewModuleReconciler(status *module.Status, desiredState *module.DesiredState, helmInstallation *module.HelmInstallation, moduleGetter ModuleGetter) *ModuleReconciler {
-	return &ModuleReconciler{Status: status, DesiredState: desiredState, HelmInstallation: helmInstallation, ModuleGetter: moduleGetter}
+func NewModuleReconciler(status *module.Status, desiredState *module.DesiredState, artifactDownload *module.ArtifactDownload, moduleGetter ModuleGetter) *ModuleReconciler {
+	return &ModuleReconciler{Status: status, DesiredState: desiredState, ArtifactDownload: artifactDownload, ModuleGetter: moduleGetter}
 }
 
 //+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
@@ -64,7 +63,8 @@ func NewModuleReconciler(status *module.Status, desiredState *module.DesiredStat
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	log := span.Log(logger)
+	log := logr.FromContextOrDiscard(ctx)
+	ctx = logf.IntoContext(ctx, log.WithValues("name", req.Name, "namespace", req.Namespace))
 
 	m, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
 	if err != nil {
@@ -76,10 +76,11 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return r.RequeueOnErr(ctx, err)
 	}
 
+	ctx = logf.IntoContext(ctx, log.WithValues("name", m.Name, "namespace", m.Namespace, "resourceVersion", m.ResourceVersion))
 	return reconciler.Chain(
 		r.Status,
 		r.DesiredState,
-		r.HelmInstallation,
+		r.ArtifactDownload,
 	).Reconcile(ctx, m)
 }
 
@@ -89,8 +90,8 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&deployv1alpha1.Module{}).
 		Owns(&sourcev1.GitRepository{}).
 		WithEventFilter(predicate.Or(
-			&event.RepoStatusPredicate{},
-			&event.ModulePredicate{},
+			event.NewRepoStatusPredicate(),
+			event.NewModulePredicate(),
 		)).
 		WithLogger(logr.Discard()).
 		Complete(r)

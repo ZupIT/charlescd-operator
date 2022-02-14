@@ -1,4 +1,4 @@
-package manifests
+package resources
 
 import (
 	"github.com/google/wire"
@@ -7,5 +7,5 @@ import (
 
 var Providers = wire.NewSet(
 	mfc.NewClient,
-	wire.Struct(new(Service), "*"),
+	wire.Struct(new(Manifests), "*"),
 )

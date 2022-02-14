@@ -9,8 +9,8 @@ package controllers
 import (
 	client2 "github.com/manifestival/client-go-client"
 	"github.com/tiagoangelozup/charles-alpha/internal/client"
-	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
+	"github.com/tiagoangelozup/charles-alpha/internal/resources"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
 	"github.com/tiagoangelozup/charles-alpha/pkg/module"
@@ -46,13 +46,13 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := &manifests.Service{
+	manifests := &resources.Manifests{
 		Client: manifestivalClient,
 	}
-	desiredState := module.NewDesiredState(filters, transformers, service)
+	desiredState := module.NewDesiredState(filters, transformers, manifests)
 	clientGitRepository := client.NewGitRepository(clientClient)
-	helmInstallation := module.NewHelmInstallation(clientGitRepository, clientModule)
-	moduleReconciler := NewModuleReconciler(status, desiredState, helmInstallation, clientModule)
+	artifactDownload := module.NewArtifactDownload(clientGitRepository, clientModule)
+	moduleReconciler := NewModuleReconciler(status, desiredState, artifactDownload, clientModule)
 	v := reconcilers(moduleReconciler)
 	return v, nil
 }

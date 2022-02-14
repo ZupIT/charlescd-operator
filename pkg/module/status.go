@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/angelokurtis/reconciler"
+	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -30,7 +31,7 @@ func (s *Status) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result,
 func (s *Status) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	log := span.Log(logger)
+	log := logr.FromContextOrDiscard(ctx)
 
 	if diff, updated := module.UpdatePhase(); updated {
 		log.Info("Status changed", "diff", diff)

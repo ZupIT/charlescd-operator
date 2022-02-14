@@ -20,8 +20,8 @@ import (
 	"github.com/google/wire"
 
 	"github.com/tiagoangelozup/charles-alpha/internal/client"
-	"github.com/tiagoangelozup/charles-alpha/internal/manifests"
 	"github.com/tiagoangelozup/charles-alpha/internal/object"
+	"github.com/tiagoangelozup/charles-alpha/internal/resources"
 	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
 	"github.com/tiagoangelozup/charles-alpha/pkg/module"
@@ -33,13 +33,13 @@ var providers = wire.NewSet(
 	reconcilers,
 	client.Providers,
 	filter.Providers,
-	manifests.Providers,
+	resources.Providers,
 	module.Providers,
 	object.Providers,
 	runtime.Providers,
 	transformer.Providers,
 	wire.Bind(new(module.GitRepositoryGetter), new(*client.GitRepository)),
-	wire.Bind(new(module.Manifests), new(*manifests.Service)),
+	wire.Bind(new(module.Manifests), new(*resources.Manifests)),
 	wire.Bind(new(module.StatusWriter), new(*client.Module)),
 	wire.Bind(new(ModuleGetter), new(*client.Module)),
 	wire.Bind(new(transformer.ObjectConverter), new(*object.UnstructuredConverter)),

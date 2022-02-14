@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/angelokurtis/reconciler"
+	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +25,7 @@ type (
 		manifests Manifests
 	}
 	Manifests interface {
-		Defaults(ctx context.Context) (mf.Manifest, error)
+		LoadDefaults(ctx context.Context) (mf.Manifest, error)
 	}
 	Transformers struct {
 		*transformer.GitRepository
@@ -49,9 +50,9 @@ func (d *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.R
 func (d *DesiredState) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	log := span.Log(logger)
+	log := logr.FromContextOrDiscard(ctx)
 
-	manifests, err := d.manifests.Defaults(ctx)
+	manifests, err := d.manifests.LoadDefaults(ctx)
 	if err != nil {
 		log.Error(err, "Error reading YAML manifests")
 		return d.RequeueOnErr(ctx, err)
