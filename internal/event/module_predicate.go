@@ -1,17 +1,14 @@
 package event
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 )
 
-var moduleLog = ctrl.Log.WithName("eventfilter").
-	WithValues("name", "modules", "version", "deploy.charlescd.io/v1alpha1").
-	V(1)
-
 type ModulePredicate struct{}
+
+func NewModulePredicate() *ModulePredicate { return &ModulePredicate{} }
 
 func (m *ModulePredicate) Create(event event.CreateEvent) bool {
 	obj := event.Object
@@ -21,7 +18,10 @@ func (m *ModulePredicate) Create(event event.CreateEvent) bool {
 	if _, ok := obj.(*v1alpha1.Module); !ok {
 		return false
 	}
-	moduleLog.Info("Resource created")
+	log.WithValues("name", obj.GetName(),
+		"namespace", obj.GetNamespace(),
+		"resourceVersion", obj.GetResourceVersion()).
+		Info("a new Module has been created")
 	return true
 }
 
@@ -33,21 +33,33 @@ func (m *ModulePredicate) Delete(event event.DeleteEvent) bool {
 	if _, ok := obj.(*v1alpha1.Module); !ok {
 		return false
 	}
-	moduleLog.Info("Resource deleted")
+	log.WithValues("name", obj.GetName(),
+		"namespace", obj.GetNamespace(),
+		"resourceVersion", obj.GetResourceVersion()).
+		Info("a Module was deleted")
 	return true
 }
 
 func (m *ModulePredicate) Update(event event.UpdateEvent) bool {
-	if event.ObjectOld == nil || event.ObjectNew == nil {
+	objOld, objNew := event.ObjectOld, event.ObjectNew
+	if objOld == nil || objNew == nil {
 		return false
 	}
-	if _, ok := event.ObjectOld.(*v1alpha1.Module); !ok {
+	moduleOld, ok := objOld.(*v1alpha1.Module)
+	if !ok {
 		return false
 	}
-	if _, ok := event.ObjectNew.(*v1alpha1.Module); !ok {
+	moduleNew, ok := objNew.(*v1alpha1.Module)
+	if !ok {
 		return false
 	}
-	moduleLog.Info("Resource updated")
+	log.WithValues("name", objNew.GetName(),
+		"namespace", objNew.GetNamespace(),
+		"resourceVersion", objNew.GetResourceVersion(),
+		"diff", diff(
+			&v1alpha1.Module{Spec: moduleOld.Spec, Status: moduleOld.Status},
+			&v1alpha1.Module{Spec: moduleNew.Spec, Status: moduleNew.Status})).
+		Info("a Module was updated")
 	return true
 }
 
