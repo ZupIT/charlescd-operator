@@ -29,7 +29,6 @@ import (
 )
 
 var providers = wire.NewSet(
-	NewModuleReconciler,
 	reconcilers,
 	client.Providers,
 	filter.Providers,
@@ -44,6 +43,13 @@ var providers = wire.NewSet(
 	wire.Bind(new(ModuleGetter), new(*client.Module)),
 	wire.Bind(new(transformer.ObjectConverter), new(*object.UnstructuredConverter)),
 	wire.Bind(new(transformer.ObjectReference), new(*object.Reference)),
+	wire.Struct(new(ModuleReconciler),
+		"Status",
+		"DesiredState",
+		"ArtifactDownload",
+		"HelmValidation",
+		"ModuleGetter",
+	),
 )
 
 func reconcilers(m *ModuleReconciler) []Reconciler {

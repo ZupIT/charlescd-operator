@@ -45,12 +45,9 @@ type ModuleReconciler struct {
 	Status           *module.Status
 	DesiredState     *module.DesiredState
 	ArtifactDownload *module.ArtifactDownload
+	HelmValidation   *module.HelmValidation
 
 	ModuleGetter ModuleGetter
-}
-
-func NewModuleReconciler(status *module.Status, desiredState *module.DesiredState, artifactDownload *module.ArtifactDownload, moduleGetter ModuleGetter) *ModuleReconciler {
-	return &ModuleReconciler{Status: status, DesiredState: desiredState, ArtifactDownload: artifactDownload, ModuleGetter: moduleGetter}
 }
 
 //+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
@@ -81,6 +78,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Status,
 		r.DesiredState,
 		r.ArtifactDownload,
+		r.HelmValidation,
 	).Reconcile(ctx, m)
 }
 
