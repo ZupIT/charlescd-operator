@@ -12,13 +12,10 @@ import (
 	"strings"
 
 	"github.com/angelokurtis/reconciler"
-	"github.com/fluxcd/pkg/apis/meta"
 	"github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,6 +61,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
+			log.Info("Artifact is not ready")
 			return a.Next(ctx, module)
 		}
 		log.Error(err, "Error getting git repository")
@@ -71,24 +69,15 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	}
 
 	// check if GitRepository is ready
-	if c := apimeta.FindStatusCondition(repo.Status.Conditions, meta.ReadyCondition); c != nil {
-		if c.Status == metav1.ConditionFalse {
-			if diff, updated := module.SetSourceError("GitRepositoryError", c.Message); updated {
+	artifact := repo.GetArtifact()
+	if artifact == nil {
+		if msg, ok := statusOf(repo).IsError(); ok {
+			if diff, updated := module.SetSourceError("GitRepositoryError", msg); updated {
 				log.Info("Status changed", "diff", diff)
 				return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 			}
 		}
-	} else {
-		if diff, updated := module.RemoveSource(); updated {
-			log.Info("Status changed", "diff", diff)
-			return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
-		}
-	}
-
-	// get artifact address
-	artifact := repo.GetArtifact()
-	if artifact == nil {
-		log.Info("The artifact is not ready")
+		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
 	}
 
@@ -176,5 +165,6 @@ func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *depl
 		return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 	}
 
+	log.Info("Artifact is ready")
 	return a.Next(ctx, module)
 }
