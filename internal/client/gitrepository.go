@@ -6,6 +6,8 @@ import (
 
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
 type GitRepository struct{ client client.Client }
@@ -15,6 +17,9 @@ func NewGitRepository(client client.Client) *GitRepository {
 }
 
 func (s *GitRepository) GetGitRepository(ctx context.Context, key client.ObjectKey) (*sourcev1.GitRepository, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+
 	m := new(sourcev1.GitRepository)
 	if err := s.client.Get(ctx, key, m); err != nil {
 		return nil, fmt.Errorf("failed to lookup resource: %w", err)
