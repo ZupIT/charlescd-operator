@@ -6,6 +6,7 @@ import (
 	mf "github.com/manifestival/manifestival"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -20,19 +21,14 @@ func NewHelm(manifests ManifestsReader) *Helm {
 	return &Helm{manifests: manifests}
 }
 
-func (h *Helm) Template(ctx context.Context, name, chart string, values runtime.RawExtension) (mf.Manifest, error) {
+func (h *Helm) Template(ctx context.Context, name, chart string, values runtime.RawExtension) (*release.Release, error) {
 	chartRequested, err := loader.LoadDir(chart)
 	if err != nil {
-		return mf.Manifest{}, err
+		return nil, err
 	}
 
 	act := templateAction(name)
-	release, err := act.RunWithContext(ctx, chartRequested, map[string]interface{}{})
-	if err != nil || release == nil {
-		return mf.Manifest{}, err
-	}
-
-	return h.manifests.FromString(ctx, release.Manifest)
+	return act.RunWithContext(ctx, chartRequested, map[string]interface{}{})
 }
 
 func templateAction(name string) *action.Install {

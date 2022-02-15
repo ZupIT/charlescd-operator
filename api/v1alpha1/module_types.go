@@ -23,6 +23,7 @@ import (
 
 const (
 	SourceReady string = "SourceReady"
+	SourceValid        = "SourceValid"
 )
 
 // ModuleSpec defines the desired state of Module
@@ -69,7 +70,8 @@ type ModuleStatus struct {
 }
 
 type Source struct {
-	Path string `json:"path,omitempty"`
+	Path     string `json:"path,omitempty"`
+	Manifest string `json:"manifest,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -24,6 +24,12 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
+const (
+	addressResolutionError = "AddressResolutionError"
+	downloadError          = "DownloadError"
+	gitRepositoryError     = "GitRepositoryError"
+)
+
 type Helm interface {
 	Template(name, chart string, values map[string]interface{}) (mf.Manifest, error)
 }
@@ -72,7 +78,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	artifact := repo.GetArtifact()
 	if artifact == nil {
 		if msg, ok := statusOf(repo).IsError(); ok {
-			if diff, updated := module.SetSourceError("GitRepositoryError", msg); updated {
+			if diff, updated := module.SetSourceError(gitRepositoryError, msg); updated {
 				log.Info("Status changed", "diff", diff)
 				return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 			}
@@ -84,7 +90,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		log.Error(err, "Error reading artifact address")
-		if diff, updated := module.SetSourceError("AddressResolutionError", err.Error()); updated {
+		if diff, updated := module.SetSourceError(addressResolutionError, err.Error()); updated {
 			log.Info("Status changed", "diff", diff)
 			return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 		}
@@ -101,7 +107,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	// download the artifact
 	if err = a.download(ctx, filepath, artifact); err != nil {
 		log.Error(err, "Error downloading artifact")
-		if diff, updated := module.SetSourceError("DownloadError", err.Error()); updated {
+		if diff, updated := module.SetSourceError(downloadError, err.Error()); updated {
 			log.Info("Status changed", "diff", diff)
 			return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 		}
@@ -116,8 +122,8 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 
-	// url := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
-	// res, err := http.Get(url)
+	// u := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
+	// res, err := http.Get(u)
 	res, err := http.Get(artifact.URL)
 	if err != nil {
 		return err
