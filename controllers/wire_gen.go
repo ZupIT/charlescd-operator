@@ -52,7 +52,8 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	desiredState := module.NewDesiredState(filters, transformers, manifests)
 	clientGitRepository := client.NewGitRepository(clientClient)
 	artifactDownload := module.NewArtifactDownload(clientGitRepository, clientModule)
-	helmValidation := module.NewHelmValidation()
+	helm := client.NewHelm(manifests)
+	helmValidation := module.NewHelmValidation(helm)
 	moduleReconciler := &ModuleReconciler{
 		Status:           status,
 		DesiredState:     desiredState,

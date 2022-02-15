@@ -6,5 +6,6 @@ import (
 
 var Providers = wire.NewSet(
 	NewGitRepository,
+	NewHelm,
 	NewModule,
 )
