@@ -11,25 +11,7 @@ func NewRepoStatusPredicate() *RepoStatusPredicate {
 	return &RepoStatusPredicate{}
 }
 
-func (g *RepoStatusPredicate) Create(event event.CreateEvent) bool {
-	obj := event.Object
-	if obj == nil {
-		return false
-	}
-	repo, ok := obj.(*sourcev1.GitRepository)
-	if !ok {
-		return false
-	}
-	artifact := repo.GetArtifact()
-	if artifact == nil {
-		return false
-	}
-	log.WithValues("name", obj.GetName(),
-		"namespace", obj.GetNamespace(),
-		"resourceVersion", obj.GetResourceVersion()).
-		Info("a new GitRepository has been created")
-	return true
-}
+func (g *RepoStatusPredicate) Create(event.CreateEvent) bool { return false }
 
 func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 	objOld, objNew := event.ObjectOld, event.ObjectNew
@@ -52,7 +34,7 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"diff", diff(
 				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
 				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
-			Info("a GitRepository was updated")
+			Info("GitRepository updated")
 		return true
 	}
 	if artifactOld != nil && artifactNew != nil &&
@@ -63,7 +45,7 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"diff", diff(
 				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
 				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
-			Info("a GitRepository was updated")
+			Info("GitRepository updated")
 		return true
 	}
 	return false
@@ -80,10 +62,8 @@ func (g *RepoStatusPredicate) Delete(event event.DeleteEvent) bool {
 	log.WithValues("name", obj.GetName(),
 		"namespace", obj.GetNamespace(),
 		"resourceVersion", obj.GetResourceVersion()).
-		Info("a GitRepository was deleted")
+		Info("GitRepository deleted")
 	return true
 }
 
-func (g *RepoStatusPredicate) Generic(event event.GenericEvent) bool {
-	return true
-}
+func (g *RepoStatusPredicate) Generic(event.GenericEvent) bool { return false }

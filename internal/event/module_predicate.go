@@ -21,7 +21,7 @@ func (m *ModulePredicate) Create(event event.CreateEvent) bool {
 	log.WithValues("name", obj.GetName(),
 		"namespace", obj.GetNamespace(),
 		"resourceVersion", obj.GetResourceVersion()).
-		Info("a new Module has been created")
+		Info("Module created")
 	return true
 }
 
@@ -36,7 +36,7 @@ func (m *ModulePredicate) Delete(event event.DeleteEvent) bool {
 	log.WithValues("name", obj.GetName(),
 		"namespace", obj.GetNamespace(),
 		"resourceVersion", obj.GetResourceVersion()).
-		Info("a Module was deleted")
+		Info("Module deleted")
 	return true
 }
 
@@ -59,7 +59,7 @@ func (m *ModulePredicate) Update(event event.UpdateEvent) bool {
 		"diff", diff(
 			&v1alpha1.Module{Spec: moduleOld.Spec, Status: moduleOld.Status},
 			&v1alpha1.Module{Spec: moduleNew.Spec, Status: moduleNew.Status})).
-		Info("a Module was updated")
+		Info("Module updated")
 	return true
 }
 

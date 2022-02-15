@@ -108,13 +108,13 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 		return a.RequeueOnErr(ctx, err)
 	}
 
+	log.Info("Artifact downloaded", "path", filepath, "checksum", artifact.Checksum)
 	return a.updateStatusToReady(ctx, module, filepath)
 }
 
 func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
 
 	// url := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
 	// res, err := http.Get(url)
@@ -138,7 +138,7 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 	if _, err = io.Copy(out, res.Body); err != nil {
 		return err
 	}
-	log.Info("Artifact downloaded", "path", filepath, "checksum", artifact.Checksum)
+
 	return nil
 }
 
@@ -165,6 +165,5 @@ func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *depl
 		return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
 	}
 
-	log.Info("Artifact is ready")
 	return a.Next(ctx, module)
 }
