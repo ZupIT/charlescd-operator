@@ -76,6 +76,22 @@ spec:
           status:
             description: ModuleStatus defines the observed state of Module
             properties:
+              components:
+                items:
+                  properties:
+                    containers:
+                      items:
+                        properties:
+                          image:
+                            type: string
+                          name:
+                            type: string
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                  type: object
+                type: array
               conditions:
                 description: Represents the latest available observations of a Module's
                   current state.

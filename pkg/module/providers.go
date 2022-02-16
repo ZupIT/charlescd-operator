@@ -4,6 +4,7 @@ import "github.com/google/wire"
 
 var Providers = wire.NewSet(
 	NewArtifactDownload,
+	NewCheckComponents,
 	NewDesiredState,
 	NewHelmValidation,
 	NewStatus,

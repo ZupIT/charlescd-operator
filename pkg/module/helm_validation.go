@@ -83,5 +83,5 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 	}
 
 	log.Info("Helm chart is valid")
-	return h.Next(ctx, module)
+	return h.Next(contextWithResources(ctx, manifests.Resources()), module)
 }

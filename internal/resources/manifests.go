@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
@@ -40,6 +41,17 @@ func (s *Manifests) FromString(ctx context.Context, manifests string) (mf.Manife
 
 	reader := strings.NewReader(manifests)
 	m, err := mf.ManifestFrom(mf.Reader(reader), mf.UseClient(s.Client), mf.UseLogger(log))
+	if err != nil {
+		return mf.Manifest{}, span.Error(fmt.Errorf("failed to read manifests from string: %w", err))
+	}
+	return m, nil
+}
+
+func (s *Manifests) FromUnstructured(ctx context.Context, manifests []unstructured.Unstructured) (mf.Manifest, error) {
+	span := tracing.SpanFromContext(ctx)
+	log := logr.FromContextOrDiscard(ctx).V(1)
+
+	m, err := mf.ManifestFrom(mf.Slice(manifests), mf.UseClient(s.Client), mf.UseLogger(log))
 	if err != nil {
 		return mf.Manifest{}, span.Error(fmt.Errorf("failed to read manifests from string: %w", err))
 	}

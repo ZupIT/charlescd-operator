@@ -42,6 +42,7 @@ var providers = wire.NewSet(
 	wire.Bind(new(module.GitRepositoryGetter), new(*client.GitRepository)),
 	wire.Bind(new(module.HelmClient), new(*client.Helm)),
 	wire.Bind(new(module.ManifestReader), new(*resources.Manifests)),
+	wire.Bind(new(module.ObjectConverter), new(*object.UnstructuredConverter)),
 	wire.Bind(new(module.StatusWriter), new(*client.Module)),
 	wire.Bind(new(ModuleGetter), new(*client.Module)),
 	wire.Bind(new(transformer.ObjectConverter), new(*object.UnstructuredConverter)),

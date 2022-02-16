@@ -64,6 +64,8 @@ type ModuleStatus struct {
 	// +optional
 	Source *Source `json:"source,omitempty"`
 
+	Components []*Component `json:"components,omitempty"`
+
 	// Represents the latest available observations of a Module's current state.
 	// +patchMergeKey=type
 	// +patchStrategy=merge
@@ -72,6 +74,16 @@ type ModuleStatus struct {
 
 type Source struct {
 	Path string `json:"path,omitempty"`
+}
+
+type Component struct {
+	Name       string       `json:"name,omitempty"`
+	Containers []*Container `json:"containers,omitempty"`
+}
+
+type Container struct {
+	Name  string `json:"name,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 //+kubebuilder:object:root=true

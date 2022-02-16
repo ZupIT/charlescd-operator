@@ -41,6 +41,7 @@ func (in *Module) SetSourceError(reason, message string) bool {
 	})
 	meta.RemoveStatusCondition(&in.Status.Conditions, SourceValid)
 	in.Status.Source = nil
+	in.Status.Components = nil
 	in.updatePhase()
 	return updated(old, in)
 }
@@ -53,7 +54,14 @@ func (in *Module) SetSourceInvalid(reason, message string) bool {
 		Reason:  reason,
 		Message: message,
 	})
+	in.Status.Components = nil
 	in.updatePhase()
+	return updated(old, in)
+}
+
+func (in *Module) SetComponents(components []*Component) bool {
+	old := in.DeepCopy()
+	in.Status.Components = components
 	return updated(old, in)
 }
 
