@@ -1,3 +1,19 @@
+/*
+Copyright 2022.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package module
 
 import (
@@ -15,7 +31,6 @@ import (
 	"github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +65,7 @@ func NewArtifactDownload(git GitRepositoryGetter, status StatusWriter) *Artifact
 }
 
 func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	if module, ok := obj.(*deployv1alpha1.Module); ok {
+	if module, ok := obj.(*deployv1alpha1.Module); ok && module.Spec.Repository.Git != nil {
 		return a.reconcile(ctx, module)
 	}
 	return a.Next(ctx, obj)
@@ -66,24 +81,20 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 		Name:      module.GetName(),
 	})
 	if err != nil {
-		if kerrors.IsNotFound(err) {
-			log.Info("Artifact is not ready")
-			return a.Next(ctx, module)
-		}
-		log.Error(err, "Error getting git repository")
 		return a.RequeueOnErr(ctx, err)
 	}
 
-	// check if GitRepository is ready
-	artifact := repo.GetArtifact()
-	if artifact == nil {
-		if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
-			return a.status.UpdateModuleStatus(ctx, module)
-		}
+	// check if this handler should act
+	if repo == nil && repo.GetArtifact() == nil {
 		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
 	}
 
+	// get artifact address
+	artifact := repo.GetArtifact()
+	if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
+		return a.status.UpdateModuleStatus(ctx, module)
+	}
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		log.Error(err, "Error reading artifact address")

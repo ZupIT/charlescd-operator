@@ -1,5 +1,5 @@
 /*
-Copyright 2021.
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	"github.com/angelokurtis/reconciler"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -71,12 +70,11 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	m, err := r.client.GetModule(ctx, req.NamespacedName)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			// Module resource not found. Ignoring since object must be deleted
-			return r.Finish(ctx)
-		}
 		log.Error(err, "Error getting resource with desired module state")
 		return r.RequeueOnErr(ctx, err)
+	}
+	if m == nil {
+		return r.Finish(ctx) // Module resource not found. Ignoring since object must be deleted
 	}
 
 	ctx = logf.IntoContext(ctx, log.WithValues("name", m.Name, "namespace", m.Namespace, "resourceVersion", m.ResourceVersion))
