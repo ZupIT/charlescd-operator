@@ -2,12 +2,15 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/hashicorp/go-getter"
 	mf "github.com/manifestival/manifestival"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type (
@@ -21,23 +24,39 @@ func NewHelm(manifests ManifestsReader) *Helm {
 	return &Helm{manifests: manifests}
 }
 
-func (h *Helm) Template(ctx context.Context, name, chart string, values runtime.RawExtension) (*release.Release, error) {
-	chartRequested, err := loader.LoadDir(chart)
-	if err != nil {
-		return nil, err
+func (h *Helm) Template(ctx context.Context, releaseName, source, path string) (mf.Manifest, error) {
+	destination := source[0 : len(source)-len(".tar.gz")]
+	if path != "" {
+		source += "//" + path
+		destination = filepath.Join(destination, path)
 	}
 
-	act := templateAction(name)
-	return act.RunWithContext(ctx, chartRequested, map[string]interface{}{})
+	if err := getter.GetAny(destination, source); err != nil {
+		return mf.Manifest{}, fmt.Errorf("error extracting Source artifact %s: %w", source, err)
+	}
+	defer os.RemoveAll(destination)
+
+	r, err := h.template(ctx, releaseName, destination, map[string]interface{}{})
+	if err != nil {
+		return mf.Manifest{}, fmt.Errorf("error rendering Helm chart templates: %w", err)
+	}
+
+	return h.manifests.FromString(ctx, r.Manifest)
 }
 
-func templateAction(name string) *action.Install {
+func (h *Helm) template(ctx context.Context, releaseName, chart string, values map[string]interface{}) (*release.Release, error) {
+	c, err := loader.LoadDir(chart)
+	if err != nil {
+		return nil, fmt.Errorf("error rendering Helm chart templates: %w", err)
+	}
+
 	config := new(action.Configuration)
 	client := action.NewInstall(config)
 	client.DryRun = true
-	client.ReleaseName = name
+	client.ReleaseName = releaseName
 	client.Replace = true
 	client.ClientOnly = true
 	client.IncludeCRDs = true
-	return client
+
+	return client.RunWithContext(ctx, c, values)
 }
