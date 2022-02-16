@@ -85,7 +85,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	}
 
 	// check if this handler should act
-	if repo == nil && repo.GetArtifact() == nil {
+	if repo == nil || repo.GetArtifact() == nil {
 		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
 	}
@@ -128,8 +128,15 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 
-	// u := "http://127.0.0.1:9090/gitrepository/default/football-bets/da684f367e901b0e2747a69c2914bd9382b1428e.tar.gz"
-	// res, err := http.Get(u)
+	// local testing purposes only
+	// u, err := url.Parse(artifact.URL)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// u.Scheme = "http"
+	// u.Host = "127.0.0.1:9090"
+	// res, err := http.Get(u.String())
+
 	res, err := http.Get(artifact.URL)
 	if err != nil {
 		return err
