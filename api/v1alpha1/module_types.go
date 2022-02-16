@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -28,8 +28,9 @@ const (
 
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
-	Repository Repository           `json:"repository"`
-	Values     runtime.RawExtension `json:"values,omitempty"`
+	Repository Repository `json:"repository"`
+	// +optional
+	Values *apiextensionsv1.JSON `json:"values,omitempty"`
 }
 
 // Repository defines the location where sources are stored

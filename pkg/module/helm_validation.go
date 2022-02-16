@@ -6,6 +6,7 @@ import (
 	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,7 +21,7 @@ const (
 
 type (
 	HelmClient interface {
-		Template(ctx context.Context, releaseName, source, path string) (mf.Manifest, error)
+		Template(ctx context.Context, releaseName, source, path string, values *apiextensionsv1.JSON) (mf.Manifest, error)
 	}
 	HelmValidation struct {
 		reconciler.Funcs
@@ -58,7 +59,7 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 	}
 
 	// templating Helm chart
-	manifests, err := h.helm.Template(ctx, module.GetName(), source, path)
+	manifests, err := h.helm.Template(ctx, module.GetName(), source, path, module.Spec.Values)
 	if err != nil {
 		log.Error(err, "Error templating source")
 		if module.SetSourceInvalid(renderError, err.Error()) {

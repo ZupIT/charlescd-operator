@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 type (
@@ -24,7 +26,7 @@ func NewHelm(manifests ManifestsReader) *Helm {
 	return &Helm{manifests: manifests}
 }
 
-func (h *Helm) Template(ctx context.Context, releaseName, source, path string) (mf.Manifest, error) {
+func (h *Helm) Template(ctx context.Context, releaseName, source, path string, values *apiextensionsv1.JSON) (mf.Manifest, error) {
 	destination := source[0 : len(source)-len(".tar.gz")]
 	if path != "" {
 		source += "//" + path
@@ -36,7 +38,12 @@ func (h *Helm) Template(ctx context.Context, releaseName, source, path string) (
 	}
 	defer os.RemoveAll(destination)
 
-	r, err := h.template(ctx, releaseName, destination, map[string]interface{}{})
+	var v map[string]interface{}
+	if values != nil {
+		_ = json.Unmarshal(values.Raw, &v)
+	}
+
+	r, err := h.template(ctx, releaseName, destination, v)
 	if err != nil {
 		return mf.Manifest{}, fmt.Errorf("error rendering Helm chart templates: %w", err)
 	}

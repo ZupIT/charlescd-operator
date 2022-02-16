@@ -69,7 +69,7 @@ spec:
                     type: object
                 type: object
               values:
-                type: object
+                x-kubernetes-preserve-unknown-fields: true
             required:
             - repository
             type: object
