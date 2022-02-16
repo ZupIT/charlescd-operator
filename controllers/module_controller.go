@@ -38,16 +38,22 @@ type ModuleGetter interface {
 	GetModule(ctx context.Context, key client.ObjectKey) (*deployv1alpha1.Module, error)
 }
 
+type ModuleHandler struct {
+	*module.Status
+	*module.DesiredState
+	*module.ArtifactDownload
+	*module.HelmValidation
+}
+
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
 	reconciler.Result
+	handle *ModuleHandler
+	client ModuleGetter
+}
 
-	Status           *module.Status
-	DesiredState     *module.DesiredState
-	ArtifactDownload *module.ArtifactDownload
-	HelmValidation   *module.HelmValidation
-
-	ModuleGetter ModuleGetter
+func newModuleReconciler(handle *ModuleHandler, client ModuleGetter) *ModuleReconciler {
+	return &ModuleReconciler{handle: handle, client: client}
 }
 
 //+kubebuilder:rbac:groups=source.toolkit.fluxcd.io,resources=gitrepositories,verbs=get;list;watch;create;update;patch;delete
@@ -63,7 +69,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log := logr.FromContextOrDiscard(ctx)
 	ctx = logf.IntoContext(ctx, log.WithValues("name", req.Name, "namespace", req.Namespace))
 
-	m, err := r.ModuleGetter.GetModule(ctx, req.NamespacedName)
+	m, err := r.client.GetModule(ctx, req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Module resource not found. Ignoring since object must be deleted
@@ -75,10 +81,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	ctx = logf.IntoContext(ctx, log.WithValues("name", m.Name, "namespace", m.Namespace, "resourceVersion", m.ResourceVersion))
 	return reconciler.Chain(
-		r.Status,
-		r.DesiredState,
-		r.ArtifactDownload,
-		r.HelmValidation,
+		r.handle.Status,
+		r.handle.DesiredState,
+		r.handle.ArtifactDownload,
+		r.handle.HelmValidation,
 	).Reconcile(ctx, m)
 }
 
