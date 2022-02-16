@@ -14,15 +14,12 @@ func (in *Module) SetSourceReady(path string) (string, bool) {
 		Reason:  "Downloaded",
 		Message: "Sources available locally at " + path,
 	})
-	if in.Status.Source == nil {
-		in.Status.Source = new(Source)
-	}
-	in.Status.Source.Path = path
+	in.Status.Source = &Source{Path: path}
 	in.updatePhase()
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceValid(manifest string) (string, bool) {
+func (in *Module) SetSourceValid() (string, bool) {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceValid,
@@ -30,10 +27,6 @@ func (in *Module) SetSourceValid(manifest string) (string, bool) {
 		Reason:  "Validated",
 		Message: "Helm chart templates were successfully rendered",
 	})
-	if in.Status.Source == nil {
-		in.Status.Source = new(Source)
-	}
-	in.Status.Source.Manifest = manifest
 	in.updatePhase()
 	return updated(old, in)
 }

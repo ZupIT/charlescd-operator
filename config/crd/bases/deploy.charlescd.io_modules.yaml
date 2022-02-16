@@ -153,8 +153,6 @@ spec:
                 type: string
               source:
                 properties:
-                  manifest:
-                    type: string
                   path:
                     type: string
                 type: object

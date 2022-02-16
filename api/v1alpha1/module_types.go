@@ -70,8 +70,7 @@ type ModuleStatus struct {
 }
 
 type Source struct {
-	Path     string `json:"path,omitempty"`
-	Manifest string `json:"manifest,omitempty"`
+	Path string `json:"path,omitempty"`
 }
 
 //+kubebuilder:object:root=true
