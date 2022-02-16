@@ -61,9 +61,8 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 	manifests, err := h.helm.Template(ctx, module.GetName(), source, path)
 	if err != nil {
 		log.Error(err, "Error templating source")
-		if diff, updated := module.SetSourceInvalid(renderError, err.Error()); updated {
-			log.Info("Status changed", "diff", diff)
-			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+		if module.SetSourceInvalid(renderError, err.Error()) {
+			return h.status.UpdateModuleStatus(ctx, module)
 		}
 		return h.Next(ctx, module)
 	}
@@ -71,17 +70,15 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 	// validate Helm chart templates
 	if _, err = manifests.DryRun(); err != nil {
 		log.Error(err, "Error validating Helm chart templates")
-		if diff, updated := module.SetSourceInvalid(kubernetesAPIError, err.Error()); updated {
-			log.Info("Status changed", "diff", diff)
-			return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+		if module.SetSourceInvalid(kubernetesAPIError, err.Error()) {
+			return h.status.UpdateModuleStatus(ctx, module)
 		}
 		return h.Next(ctx, module)
 	}
 
 	// update status to success
-	if diff, updated := module.SetSourceValid(); updated {
-		log.Info("Status changed", "diff", diff)
-		return h.RequeueOnErr(ctx, h.status.UpdateModuleStatus(ctx, module))
+	if module.SetSourceValid() {
+		return h.status.UpdateModuleStatus(ctx, module)
 	}
 
 	log.Info("Helm chart is valid")

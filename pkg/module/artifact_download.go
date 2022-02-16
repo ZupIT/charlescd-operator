@@ -77,11 +77,8 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	// check if GitRepository is ready
 	artifact := repo.GetArtifact()
 	if artifact == nil {
-		if msg, ok := statusOf(repo).IsError(); ok {
-			if diff, updated := module.SetSourceError(gitRepositoryError, msg); updated {
-				log.Info("Status changed", "diff", diff)
-				return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
-			}
+		if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
+			return a.status.UpdateModuleStatus(ctx, module)
 		}
 		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
@@ -90,9 +87,8 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		log.Error(err, "Error reading artifact address")
-		if diff, updated := module.SetSourceError(addressResolutionError, err.Error()); updated {
-			log.Info("Status changed", "diff", diff)
-			return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
+		if module.SetSourceError(addressResolutionError, err.Error()) {
+			return a.status.UpdateModuleStatus(ctx, module)
 		}
 		return a.RequeueOnErr(ctx, err)
 	}
@@ -107,9 +103,8 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	// download the artifact
 	if err = a.download(ctx, filepath, artifact); err != nil {
 		log.Error(err, "Error downloading artifact")
-		if diff, updated := module.SetSourceError(downloadError, err.Error()); updated {
-			log.Info("Status changed", "diff", diff)
-			return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
+		if module.SetSourceError(downloadError, err.Error()) {
+			return a.status.UpdateModuleStatus(ctx, module)
 		}
 		return a.RequeueOnErr(ctx, err)
 	}
@@ -164,11 +159,8 @@ func (a *ArtifactDownload) checksum(filepath, checksum string) bool {
 }
 
 func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *deployv1alpha1.Module, filepath string) (ctrl.Result, error) {
-	log := logr.FromContextOrDiscard(ctx)
-
-	if diff, updated := module.SetSourceReady(filepath); updated {
-		log.Info("Status changed", "diff", diff)
-		return a.RequeueOnErr(ctx, a.status.UpdateModuleStatus(ctx, module))
+	if module.SetSourceReady(filepath) {
+		return a.status.UpdateModuleStatus(ctx, module)
 	}
 
 	return a.Next(ctx, module)

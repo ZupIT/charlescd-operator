@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (in *Module) SetSourceReady(path string) (string, bool) {
+func (in *Module) SetSourceReady(path string) bool {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceReady,
@@ -19,7 +19,7 @@ func (in *Module) SetSourceReady(path string) (string, bool) {
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceValid() (string, bool) {
+func (in *Module) SetSourceValid() bool {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceValid,
@@ -31,7 +31,7 @@ func (in *Module) SetSourceValid() (string, bool) {
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceError(reason, message string) (string, bool) {
+func (in *Module) SetSourceError(reason, message string) bool {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceReady,
@@ -45,7 +45,7 @@ func (in *Module) SetSourceError(reason, message string) (string, bool) {
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceInvalid(reason, message string) (string, bool) {
+func (in *Module) SetSourceInvalid(reason, message string) bool {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceValid,
@@ -57,7 +57,7 @@ func (in *Module) SetSourceInvalid(reason, message string) (string, bool) {
 	return updated(old, in)
 }
 
-func (in *Module) UpdatePhase() (string, bool) {
+func (in *Module) UpdatePhase() bool {
 	old := in.DeepCopy()
 	in.updatePhase()
 	return updated(old, in)
@@ -74,10 +74,8 @@ func (in *Module) updatePhase() {
 	}
 }
 
-func updated(old, new client.Object) (diff string, updated bool) {
+func updated(old, new client.Object) bool {
 	patch := client.MergeFrom(old)
 	data, _ := patch.Data(new)
-	diff = string(data)
-	updated = diff != "{}"
-	return diff, updated
+	return string(data) != "{}"
 }
