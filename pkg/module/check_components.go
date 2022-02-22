@@ -32,8 +32,11 @@ func NewCheckComponents(manifest ManifestReader, object ObjectConverter, status 
 }
 
 func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+
 	resources := resourcesFromContext(ctx)
-	if module, ok := obj.(*deployv1alpha1.Module); ok || len(resources) > 0 {
+	if module, ok := obj.(*deployv1alpha1.Module); ok && len(resources) > 0 {
 		manifest, err := c.manifest.FromUnstructured(ctx, resources)
 		if err != nil {
 			return c.RequeueOnErr(ctx, err)
@@ -44,8 +47,6 @@ func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctr
 }
 
 func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.Module, manifest mf.Manifest) (ctrl.Result, error) {
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
 
 	components := make([]*deployv1alpha1.Component, 0, 0)
