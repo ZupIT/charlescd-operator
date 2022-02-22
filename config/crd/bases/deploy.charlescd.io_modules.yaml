@@ -40,38 +40,162 @@ spec:
           spec:
             description: ModuleSpec defines the desired state of Module
             properties:
-              repository:
-                description: Repository defines the location where sources are stored
+              helm:
                 properties:
-                  git:
-                    description: Git defines the address where sources are tracked
+                  gitRepository:
                     properties:
-                      branch:
-                        type: string
-                      commit:
+                      interval:
+                        default: 1m
                         type: string
                       path:
+                        default: /
                         type: string
-                      tag:
-                        type: string
+                      ref:
+                        properties:
+                          type:
+                            enum:
+                            - branch
+                            - commit
+                            - tag
+                            - semver
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - type
+                        - value
+                        type: object
+                      secretRef:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
                       url:
                         type: string
+                    required:
+                    - ref
+                    - url
                     type: object
-                  helm:
-                    description: Helm defines the address where charts are packaged
+                  helmRepository:
                     properties:
-                      chart:
+                      helmChart:
+                        properties:
+                          chart:
+                            type: string
+                          version:
+                            default: '*'
+                            type: string
+                        required:
+                        - chart
+                        type: object
+                      interval:
+                        default: 1m
                         type: string
+                      secretRef:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
                       url:
                         type: string
-                      version:
-                        type: string
+                    required:
+                    - helmChart
+                    - url
                     type: object
+                  values:
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
-              values:
-                x-kubernetes-preserve-unknown-fields: true
-            required:
-            - repository
+              kustomization:
+                properties:
+                  gitRepository:
+                    properties:
+                      interval:
+                        default: 1m
+                        type: string
+                      path:
+                        default: /
+                        type: string
+                      ref:
+                        properties:
+                          type:
+                            enum:
+                            - branch
+                            - commit
+                            - tag
+                            - semver
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - type
+                        - value
+                        type: object
+                      secretRef:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      url:
+                        type: string
+                    required:
+                    - ref
+                    - url
+                    type: object
+                  patches:
+                    x-kubernetes-preserve-unknown-fields: true
+                required:
+                - gitRepository
+                type: object
+              manifests:
+                properties:
+                  gitRepository:
+                    properties:
+                      interval:
+                        default: 1m
+                        type: string
+                      path:
+                        default: /
+                        type: string
+                      ref:
+                        properties:
+                          type:
+                            enum:
+                            - branch
+                            - commit
+                            - tag
+                            - semver
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - type
+                        - value
+                        type: object
+                      secretRef:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      url:
+                        type: string
+                    required:
+                    - ref
+                    - url
+                    type: object
+                  recursive:
+                    default: false
+                    type: boolean
+                required:
+                - gitRepository
+                type: object
             type: object
           status:
             description: ModuleStatus defines the observed state of Module
