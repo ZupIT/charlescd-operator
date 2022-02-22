@@ -68,15 +68,6 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 		return h.Next(ctx, module)
 	}
 
-	// validate Helm chart templates
-	if _, err = manifests.DryRun(); err != nil {
-		log.Error(err, "Error validating Helm chart templates")
-		if module.SetSourceInvalid(kubernetesAPIError, err.Error()) {
-			return h.status.UpdateModuleStatus(ctx, module)
-		}
-		return h.Next(ctx, module)
-	}
-
 	// update status to success
 	if module.SetSourceValid() {
 		return h.status.UpdateModuleStatus(ctx, module)
