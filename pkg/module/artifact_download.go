@@ -85,16 +85,22 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	}
 
 	// check if this handler should act
-	if repo == nil || repo.GetArtifact() == nil {
+	if repo == nil {
+		log.Info("Artifact is not ready")
+		return a.Next(ctx, module)
+	}
+
+	// check if artifact is ready
+	artifact := repo.GetArtifact()
+	if artifact == nil {
+		if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
+			return a.status.UpdateModuleStatus(ctx, module)
+		}
 		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
 	}
 
 	// get artifact address
-	artifact := repo.GetArtifact()
-	if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
-		return a.status.UpdateModuleStatus(ctx, module)
-	}
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		log.Error(err, "Error reading artifact address")
