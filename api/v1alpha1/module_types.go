@@ -60,7 +60,7 @@ type Helm struct {
 }
 
 type GitRepository struct {
-	// +kubebuilder:default="1m"
+	// +kubebuilder:default="60s"
 	Interval metav1.Duration `json:"interval,omitempty"`
 	// +kubebuilder:validation:Required
 	URL string `json:"url"`
@@ -80,7 +80,7 @@ type GitRef struct {
 }
 
 type HelmRepository struct {
-	// +kubebuilder:default="1m"
+	// +kubebuilder:default="60s"
 	Interval metav1.Duration `json:"interval,omitempty"`
 	// +kubebuilder:validation:Required
 	URL string `json:"url"`

@@ -45,7 +45,7 @@ spec:
                   gitRepository:
                     properties:
                       interval:
-                        default: 1m
+                        default: 60s
                         type: string
                       path:
                         default: /
@@ -91,7 +91,7 @@ spec:
                         - chart
                         type: object
                       interval:
-                        default: 1m
+                        default: 60s
                         type: string
                       secretRef:
                         properties:
@@ -114,7 +114,7 @@ spec:
                   gitRepository:
                     properties:
                       interval:
-                        default: 1m
+                        default: 60s
                         type: string
                       path:
                         default: /
@@ -157,7 +157,7 @@ spec:
                   gitRepository:
                     properties:
                       interval:
-                        default: 1m
+                        default: 60s
                         type: string
                       path:
                         default: /
