@@ -83,7 +83,7 @@ GOFUMPT = $(shell pwd)/bin/gofumpt
 gofumpt: ## Download gofumpt locally if necessary.
 	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.3.0)
 
-fmt: ## Run go fmt against code.
+fmt: gofumpt ## Run go fmt against code.
 	$(GOFUMPT) -l -w -extra .
 
 vet: ## Run go vet against code.
