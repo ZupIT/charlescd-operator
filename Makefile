@@ -81,7 +81,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 
 GOFUMPT = $(shell pwd)/bin/gofumpt
 gofumpt: ## Download gofumpt locally if necessary.
-	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@latest)
+	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.3.0)
 
 fmt: ## Run go fmt against code.
 	$(GOFUMPT) -l -w -extra .
@@ -139,7 +139,7 @@ wire: ## Download wire locally if necessary.
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.11.1)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
