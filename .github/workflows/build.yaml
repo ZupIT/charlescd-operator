@@ -16,18 +16,7 @@
 
 name: build
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - "charlescd-operator/**"
-    tags:
-      - "!*"
-  pull_request:
-    branches: [ system-token, main, charlescd-release-*.0 ]
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - "charlescd-operator//**"
+on: [workflow_dispatch]
 
 permissions: read-all
 
