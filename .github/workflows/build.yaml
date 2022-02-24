@@ -1,5 +1,5 @@
  #
-  # Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+  # Copyright 2020, 2021 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -17,6 +17,17 @@
 name: build
 
 on: [workflow_dispatch]
+#   push:
+#     branches: [main]
+#     paths:
+#       - "charlescd-operator/**"
+#     tags:
+#       - "!*"
+#   pull_request:
+#     branches: [ system-token, main, charlescd-release-*.0 ]
+#     types: [opened, synchronize, reopened, ready_for_review]
+#     paths:
+#       - "charlescd-operator//**"
 
 permissions: read-all
 
@@ -37,7 +48,7 @@ jobs:
         uses: actions/setup-go@331ce1d993939866bb63c32c6cbbfd48fa76fc57
         with:
           go-version: "1.15"
-  tests:
+ tests:
     runs-on: ubuntu-latest
     steps:
       - name: Run Unit tests
@@ -50,7 +61,7 @@ jobs:
           file: ./operator/coverage.cov
           flags: operator
           fail_ci_if_error: true   
-  lint:
+ lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
