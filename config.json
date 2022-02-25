@@ -31,7 +31,8 @@
       "**/*.lock",
       "**/*.sum",
       "**/*.ico",
-      "**/*.tpl"
+      "**/*.tpl",
+      "**/*.txt"
     ],
     "startDateLicense": 2022
   }
