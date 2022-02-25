@@ -14,7 +14,7 @@
   # limitations under the License.
 #
 
-name: build
+name: Build
 
 on: [workflow_dispatch]
 
@@ -37,19 +37,22 @@ jobs:
         uses: actions/setup-go@331ce1d993939866bb63c32c6cbbfd48fa76fc57
         with:
           go-version: "1.15"
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Unit tests
-        working-directory: ./operator
+      - name: Build
         run: |
-          go test -v -coverpkg ./internal/... -coverprofile=coverage.cov ./internal/tests/...
-      - name: Tests coverage
-        uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
-        with:
-          file: ./operator/coverage.cov
-          flags: operator
-          fail_ci_if_error: true   
+            make build
+  #TODO: tests: 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run Unit tests
+  #       working-directory: ./operator
+  #       run: |
+  #         go test -v -coverpkg ./internal/... -coverprofile=coverage.cov ./internal/tests/...
+  #     - name: Tests coverage
+  #       uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
+  #       with:
+  #         file: ./operator/coverage.cov
+  #         flags: operator
+  #         fail_ci_if_error: true   
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -58,5 +61,4 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          working-directory: ./operator
           version: v1.42.0
