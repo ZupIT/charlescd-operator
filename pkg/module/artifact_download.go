@@ -65,10 +65,18 @@ func NewArtifactDownload(git GitRepositoryGetter, status StatusWriter) *Artifact
 }
 
 func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	if module, ok := obj.(*deployv1alpha1.Module); ok && module.Spec.Repository.Git != nil {
-		return a.reconcile(ctx, module)
+	module, ok := obj.(*deployv1alpha1.Module)
+	if !ok {
+		return a.Next(ctx, obj)
 	}
-	return a.Next(ctx, obj)
+	git, err := module.GetGitRepository()
+	if err != nil {
+		return a.RequeueOnErr(ctx, err)
+	}
+	if git == nil {
+		return a.Next(ctx, obj)
+	}
+	return a.reconcile(ctx, module)
 }
 
 func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
@@ -85,16 +93,22 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	}
 
 	// check if this handler should act
-	if repo == nil || repo.GetArtifact() == nil {
+	if repo == nil {
+		log.Info("Artifact is not ready")
+		return a.Next(ctx, module)
+	}
+
+	// check if artifact is ready
+	artifact := repo.GetArtifact()
+	if artifact == nil {
+		if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
+			return a.status.UpdateModuleStatus(ctx, module)
+		}
 		log.Info("Artifact is not ready")
 		return a.Next(ctx, module)
 	}
 
 	// get artifact address
-	artifact := repo.GetArtifact()
-	if msg, ok := statusOf(repo).IsError(); ok && module.SetSourceError(gitRepositoryError, msg) {
-		return a.status.UpdateModuleStatus(ctx, module)
-	}
 	u, err := url.Parse(artifact.URL)
 	if err != nil {
 		log.Error(err, "Error reading artifact address")

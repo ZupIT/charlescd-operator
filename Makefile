@@ -29,14 +29,14 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # charlescd.io/charles-alpha-bundle:$VERSION and charlescd.io/charles-alpha-catalog:$VERSION.
-IMAGE_TAG_BASE ?= charlescd.io/charles-alpha
+IMAGE_TAG_BASE ?= charlescd.io/charlescd-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
 
@@ -79,8 +79,12 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-fmt: ## Run go fmt against code.
-	gofumpt -l -w -extra .
+GOFUMPT = $(shell pwd)/bin/gofumpt
+gofumpt: ## Download gofumpt locally if necessary.
+	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.3.0)
+
+fmt: gofumpt ## Run go fmt against code.
+	$(GOFUMPT) -l -w -extra .
 
 vet: ## Run go vet against code.
 	go vet ./...

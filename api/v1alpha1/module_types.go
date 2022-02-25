@@ -28,31 +28,78 @@ const (
 
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
-	Repository Repository `json:"repository"`
-	// +optional
-	Values *apiextensionsv1.JSON `json:"values,omitempty"`
-}
-
-// Repository defines the location where sources are stored
-type Repository struct {
-	Git  *Git  `json:"git,omitempty"`
+	// +kubebuilder:validation:Optional
+	Manifests *Manifests `json:"manifests,omitempty"`
+	// +kubebuilder:validation:Optional
+	Kustomization *Kustomization `json:"kustomization,omitempty"`
+	// +kubebuilder:validation:Optional
 	Helm *Helm `json:"helm,omitempty"`
 }
 
-// Git defines the address where sources are tracked
-type Git struct {
-	URL    string `json:"url,omitempty"`
-	Path   string `json:"path,omitempty"`
-	Branch string `json:"branch,omitempty"`
-	Commit string `json:"commit,omitempty"`
-	Tag    string `json:"tag,omitempty"`
+type Manifests struct {
+	// +kubebuilder:default=false
+	Recursive bool `json:"recursive,omitempty"`
+	// +kubebuilder:validation:Required
+	GitRepository GitRepository `json:"gitRepository"`
 }
 
-// Helm defines the address where charts are packaged
+type Kustomization struct {
+	// +kubebuilder:validation:Optional
+	Patches *apiextensionsv1.JSON `json:"patches,omitempty"`
+	// +kubebuilder:validation:Required
+	GitRepository GitRepository `json:"gitRepository"`
+}
+
 type Helm struct {
-	URL     string `json:"url,omitempty"`
-	Chart   string `json:"chart,omitempty"`
+	// +kubebuilder:validation:Optional
+	Values *apiextensionsv1.JSON `json:"values,omitempty"`
+	// +kubebuilder:validation:Optional
+	GitRepository *GitRepository `json:"gitRepository,omitempty"`
+	// +kubebuilder:validation:Optional
+	HelmRepository *HelmRepository `json:"helmRepository,omitempty"`
+}
+
+type GitRepository struct {
+	// +kubebuilder:default="60s"
+	Interval metav1.Duration `json:"interval,omitempty"`
+	// +kubebuilder:validation:Required
+	URL string `json:"url"`
+	// +kubebuilder:default="/"
+	Path string `json:"path,omitempty"`
+	// +kubebuilder:validation:Required
+	Ref GitRef `json:"ref"`
+	// +kubebuilder:validation:Optional
+	SecretRef *SecretRef `json:"secretRef,omitempty"`
+}
+
+type GitRef struct {
+	// +kubebuilder:validation:Enum=branch;commit;tag;semver
+	Type string `json:"type"`
+	// +kubebuilder:validation:Required
+	Value string `json:"value"`
+}
+
+type HelmRepository struct {
+	// +kubebuilder:default="60s"
+	Interval metav1.Duration `json:"interval,omitempty"`
+	// +kubebuilder:validation:Required
+	URL string `json:"url"`
+	// +kubebuilder:validation:Optional
+	SecretRef *SecretRef `json:"secretRef,omitempty"`
+	// +kubebuilder:validation:Required
+	HelmChart HelmChart `json:"helmChart"`
+}
+
+type HelmChart struct {
+	// +kubebuilder:validation:Required
+	Chart string `json:"chart"`
+	// +kubebuilder:default:=*
 	Version string `json:"version,omitempty"`
+}
+
+type SecretRef struct {
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
 }
 
 // ModuleStatus defines the observed state of Module
