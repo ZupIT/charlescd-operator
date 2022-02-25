@@ -1,0 +1,64 @@
+ #
+  # Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #  http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+#
+
+name: Build
+
+on: [workflow_dispatch]
+
+permissions: read-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run actions checkout
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #v.2.4.0
+      - name: Run actions cache
+        uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #v2.1.7
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Set up Go
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 #v2.2.0
+        with:
+          go-version: "1.17.7"
+      - name: Build
+        run: |
+            make build
+  #TODO:s tests: 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run Unit tests
+  #       working-directory: ./operator
+  #       run: |
+  #         go test -v -coverpkg ./internal/... -coverprofile=coverage.cov ./internal/tests/...
+  #     - name: Tests coverage
+  #       uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
+  #       with:
+  #         file: ./operator/coverage.cov
+  #         flags: operator
+  #         fail_ci_if_error: true   
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #v2.4.0
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@c675eb70db3aa26b496bc4e64da320480338d41b #v3.0.0
+        with:
+          version: v1.44.2
