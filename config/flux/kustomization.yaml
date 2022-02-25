@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - https://github.com/fluxcd/source-controller/releases/download/v0.21.2/source-controller.crds.yaml
   - https://github.com/fluxcd/source-controller/releases/download/v0.21.2/source-controller.deployment.yaml
+namePrefix: flux-
 patchesJson6902:
   - target:
       group: apps

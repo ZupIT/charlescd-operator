@@ -2,25 +2,27 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller-manager
+    control-plane: operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: operator
   namespace: system
   labels:
-    control-plane: controller-manager
+    app.kubernetes.io/name: charlescd
+    control-plane: operator
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: operator
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        app.kubernetes.io/name: charlescd
+        control-plane: operator
     spec:
       securityContext:
         runAsNonRoot: true
@@ -53,5 +55,5 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-      serviceAccountName: controller-manager
+      serviceAccountName: operator
       terminationGracePeriodSeconds: 10

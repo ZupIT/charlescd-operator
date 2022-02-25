@@ -32,24 +32,29 @@ func NewCheckComponents(manifest ManifestReader, object ObjectConverter, status 
 }
 
 func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	resources := resourcesFromContext(ctx)
-	if module, ok := obj.(*deployv1alpha1.Module); ok || len(resources) > 0 {
-		manifest, err := c.manifest.FromUnstructured(ctx, resources)
-		if err != nil {
-			return c.RequeueOnErr(ctx, err)
-		}
-		return c.reconcile(ctx, module, manifest)
+	module, ok := obj.(*deployv1alpha1.Module)
+	if !ok || !module.IsSourceValid() || !module.IsSourceReady() {
+		return c.Next(ctx, obj)
 	}
-	return c.Next(ctx, obj)
+	resources := resourcesFromContext(ctx)
+	if len(resources) == 0 {
+		return c.Next(ctx, obj)
+	}
+	return c.reconcile(ctx, module, resources)
 }
 
-func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.Module, manifest mf.Manifest) (ctrl.Result, error) {
+func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
 
+	manifests, err := c.manifest.FromUnstructured(ctx, resources)
+	if err != nil {
+		return c.RequeueOnErr(ctx, err)
+	}
+
 	components := make([]*deployv1alpha1.Component, 0, 0)
-	for _, u := range manifest.Filter(mf.ByKind("Deployment")).Resources() {
+	for _, u := range manifests.Filter(mf.ByKind("Deployment")).Resources() {
 		deploy := &appsv1.Deployment{}
 		if err := c.object.FromUnstructured(&u, deploy); err != nil {
 			return c.RequeueOnErr(ctx, err)
