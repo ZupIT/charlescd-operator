@@ -64,22 +64,6 @@
 **Referência:** 
 [google/wire](https://github.com/google/wire)
 
-
-## Ginkgo
-**O que é:**  Framework de testes para Golang.
-**Como usamos:** TODO
-**Tipo:** Framework.
-**Referência:** 
-[onsi/ginkgo](https://github.com/onsi/ginkgo)
-
-## Gomega
-**O que é:** Biblioteca de apoio ao Ginkgo, que permite uso assertions no teste.
-**Como usamos:** TODO
-**Tipo:** Biblioteca.
-**Referência:** 
-[onsi/gomega](https://onsi.github.io/gomega/)
-
-
 ## GoGetter
 **O que é:** Biblioteca que possibilita o download de arquivos e diretórios por meio de uma url. 
 **Como usamos:** Utilizamos para realizar a injeção de depedências dentro do projeto Operator, facilitando a manutenção do código.
