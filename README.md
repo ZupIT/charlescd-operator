@@ -2,7 +2,7 @@
 
 <img class="special-img-class" src="https://raw.githubusercontent.com/ZupIT/charlescd/main/images/logo.png"  alt="CharlesCD logo"/>
 
-
+[![Build](https://github.com/ZupIT/charlescd-operator/actions/workflows/build.yaml/badge.svg?event=push)](https://github.com/ZupIT/charlescd-operator/actions/workflows/build.yaml)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -32,7 +32,7 @@ A Kubernetes Operator that enables Hypothesis-Driven Testing
 - Golang 1.17.x or above
 - Kubernetes 1.20.6 or above
 
-*Note.* CharlesCD-Operator works on Kubernetes 1.19, but we don’t recommend running EOL versions in production.
+**Note.** *CharlesCD-Operator works on Kubernetes 1.19, but we don’t recommend running EOL versions in production.*
 
 
 
