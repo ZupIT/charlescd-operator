@@ -36,13 +36,14 @@ func NewHelmValidation(helm HelmClient, status StatusWriter) *HelmValidation {
 }
 
 func (h *HelmValidation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	if module, ok := obj.(*deployv1alpha1.Module); ok {
-		return h.reconcile(ctx, module)
+	module, ok := obj.(*deployv1alpha1.Module)
+	if !ok || module.Spec.Helm == nil || !module.IsSourceReady() {
+		return h.Next(ctx, obj)
 	}
-	return h.Next(ctx, obj)
+	return h.reconcile(ctx, module, module.Spec.Helm)
 }
 
-func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.Module, helm *deployv1alpha1.Helm) (ctrl.Result, error) {
 	// check if this handler should act
 	if module.Status.Source == nil || module.Status.Source.Path == "" {
 		return h.Next(ctx, module)
@@ -54,12 +55,12 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.M
 	log := logr.FromContextOrDiscard(ctx)
 
 	source, path := module.Status.Source.Path, ""
-	if module.Spec.Repository.Git != nil && module.Spec.Repository.Git.Path != "" {
-		path = module.Spec.Repository.Git.Path
+	if helm.GitRepository != nil && helm.GitRepository.Path != "" {
+		path = helm.GitRepository.Path
 	}
 
 	// templating Helm chart
-	manifests, err := h.helm.Template(ctx, module.GetName(), source, path, module.Spec.Values)
+	manifests, err := h.helm.Template(ctx, module.GetName(), source, path, helm.Values)
 	if err != nil {
 		log.Error(err, "Error templating source")
 		if module.SetSourceInvalid(renderError, err.Error()) {

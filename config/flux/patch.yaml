@@ -5,4 +5,4 @@
   path: "/spec/template/spec/containers/0/args/5"
 - op: add
   path: "/spec/template/spec/containers/0/args/-"
-  value: --storage-adv-addr=charles-alpha-source-controller.$(RUNTIME_NAMESPACE).svc.cluster.local.
+  value: --storage-adv-addr=charlescd-flux-source-controller.$(RUNTIME_NAMESPACE).svc.cluster.local.

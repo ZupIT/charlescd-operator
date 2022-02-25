@@ -45,7 +45,7 @@ func (h *Helm) Template(ctx context.Context, releaseName, source, path string, v
 
 	r, err := h.template(ctx, releaseName, destination, v)
 	if err != nil {
-		return mf.Manifest{}, fmt.Errorf("error rendering Helm chart templates: %w", err)
+		return mf.Manifest{}, err
 	}
 
 	return h.manifests.FromString(ctx, r.Manifest)
