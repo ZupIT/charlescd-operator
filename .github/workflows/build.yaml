@@ -1,5 +1,5 @@
  #
-  # Copyright 2020, 2021 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+  # Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -14,20 +14,9 @@
   # limitations under the License.
 #
 
-name: build
+name: Build
 
 on: [workflow_dispatch]
-#   push:
-#     branches: [main]
-#     paths:
-#       - "charlescd-operator/**"
-#     tags:
-#       - "!*"
-#   pull_request:
-#     branches: [ system-token, main, charlescd-release-*.0 ]
-#     types: [opened, synchronize, reopened, ready_for_review]
-#     paths:
-#       - "charlescd-operator//**"
 
 permissions: read-all
 
@@ -36,38 +25,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run actions checkout
-        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #v.2.4.0
       - name: Run actions cache
-        uses: actions/cache@c64c572235d810460d0d6876e9c705ad5002b353
+        uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #v2.1.7
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Set up Go
-        uses: actions/setup-go@331ce1d993939866bb63c32c6cbbfd48fa76fc57
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 #v2.2.0
         with:
-          go-version: "1.15"
- tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Unit tests
-        working-directory: ./operator
+          go-version: "1.17.7"
+      - name: Build
         run: |
-          go test -v -coverpkg ./internal/... -coverprofile=coverage.cov ./internal/tests/...
-      - name: Tests coverage
-        uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
-        with:
-          file: ./operator/coverage.cov
-          flags: operator
-          fail_ci_if_error: true   
- lint:
+            make build
+  #TODO:s tests: 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run Unit tests
+  #       working-directory: ./operator
+  #       run: |
+  #         go test -v -coverpkg ./internal/... -coverprofile=coverage.cov ./internal/tests/...
+  #     - name: Tests coverage
+  #       uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
+  #       with:
+  #         file: ./operator/coverage.cov
+  #         flags: operator
+  #         fail_ci_if_error: true   
+  lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #v2.4.0
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@c675eb70db3aa26b496bc4e64da320480338d41b #v3.0.0
         with:
-          working-directory: ./operator
-          version: v1.42.0
+          version: v1.44.2

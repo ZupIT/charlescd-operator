@@ -79,8 +79,12 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-fmt: ## Run go fmt against code.
-	gofumpt -l -w -extra .
+GOFUMPT = $(shell pwd)/bin/gofumpt
+gofumpt: ## Download gofumpt locally if necessary.
+	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.3.0)
+
+fmt: gofumpt ## Run go fmt against code.
+	$(GOFUMPT) -l -w -extra .
 
 vet: ## Run go vet against code.
 	go vet ./...
