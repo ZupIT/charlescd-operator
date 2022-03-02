@@ -13,8 +13,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/h2non/gock.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,10 +46,6 @@ var _ = Describe("CheckComponents", func() {
 
 	Context("when reconciling for checking components", func() {
 		It("should update status successfully with deployable components", func() {
-			gock.New("https://example.com").
-				Get("/manifests").
-				Reply(200).
-				BodyString(getArtifactData())
 
 			contextWithResources := fillContextResources(ctx)
 			mod := newValidModule()
@@ -61,6 +57,47 @@ var _ = Describe("CheckComponents", func() {
 			Expect(mod.Status.Components[0].Containers[0].Name).To(Equal("quiz-app"))
 			Expect(mod.Status.Components[0].Containers[0].Image).To(Equal("charlescd/quiz-app:1.0"))
 		})
+
+		It("should not update status when are no resources in context", func() {
+
+			contextWIthoutResources := context.TODO()
+			mod := newValidModule()
+
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+			_, err := checkComponents.Reconcile(contextWIthoutResources, mod)
+			Expect(err).To(BeNil())
+			statusWriterMock.AssertNumberOfCalls(GinkgoT(), "UpdateModuleStatus", 0)
+		})
+
+		It("should not update status when source is not ready", func() {
+
+			contextWithResources := fillContextResources(ctx)
+			mod := newNotReadyModule()
+
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+			_, err := checkComponents.Reconcile(contextWithResources, mod)
+			Expect(err).To(BeNil())
+			statusWriterMock.AssertNumberOfCalls(GinkgoT(), "UpdateModuleStatus", 0)
+		})
+
+		It("should update status when have duplicated components name", func() {
+			expectedCondition := metav1.Condition{
+				Type:    charlescdv1alpha1.SourceValid,
+				Status:  metav1.ConditionFalse,
+				Reason:  "DuplicatedComponent",
+				Message: "test-deploy: component already present on module",
+			}
+			contextWithResources := fillContextWithDuplicatedResources(ctx)
+			mod := newValidModule()
+
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+			_, err := checkComponents.Reconcile(contextWithResources, mod)
+			Expect(err).To(BeNil())
+			Expect(mod.Status.Conditions[1].Status).To(Equal(expectedCondition.Status))
+			Expect(mod.Status.Conditions[1].Message).To(Equal(expectedCondition.Message))
+			Expect(mod.Status.Conditions[1].Reason).To(Equal(expectedCondition.Reason))
+			Expect(mod.Status.Conditions[1].Type).To(Equal(expectedCondition.Type))
+		})
 	})
 })
 
@@ -70,9 +107,45 @@ func fillContextResources(ctx context.Context) context.Context {
 	return context.WithValue(ctx, module.ResourcesContextKey{}, manifests.Resources())
 }
 
+func fillContextWithDuplicatedResources(ctx context.Context) context.Context {
+	resourceDeployment := getUnstructuredDeployment()
+
+	resourceDeploymentDuplicated := getUnstructuredDeployment()
+	return context.WithValue(ctx, module.ResourcesContextKey{}, []unstructured.Unstructured{resourceDeployment, resourceDeploymentDuplicated})
+}
+
+func getUnstructuredDeployment() unstructured.Unstructured {
+	u := unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "apps/v1",
+			"kind":       "Deployment",
+			"metadata": map[string]interface{}{
+				"name":      "test-deploy",
+				"namespace": "test",
+			},
+		},
+	}
+	container := map[string]interface{}{
+		"name":  "web",
+		"image": "nginx:1.12",
+	}
+	containers := make([]interface{}, 1)
+	containers[0] = container
+
+	err := unstructured.SetNestedField(u.Object, containers, "spec", "template", "spec", "containers")
+	Expect(err).ToNot(HaveOccurred())
+	return u
+}
+
 func newValidModule() *charlescdv1alpha1.Module {
 	module := new(charlescdv1alpha1.Module)
 	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}, {Type: "SourceValid", Status: metav1.ConditionTrue}}
+	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
+	return module
+}
+func newNotReadyModule() *charlescdv1alpha1.Module {
+	module := new(charlescdv1alpha1.Module)
 	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
 	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
 	return module

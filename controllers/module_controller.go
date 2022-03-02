@@ -40,6 +40,7 @@ type ModuleHandler struct {
 	*module.DesiredState
 	*module.ArtifactDownload
 	*module.HelmValidation
+	*module.KustomizationValidation
 	*module.CheckComponents
 	*module.ManifestValidation
 }
@@ -86,6 +87,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.handle.DesiredState,
 		r.handle.ArtifactDownload,
 		r.handle.HelmValidation,
+		r.handle.KustomizationValidation,
 		r.handle.ManifestValidation,
 		r.handle.CheckComponents,
 	).Reconcile(ctx, m)

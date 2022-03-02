@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package module
+package client
 
-import "github.com/google/wire"
+import (
+	"context"
 
-var Providers = wire.NewSet(
-	NewArtifactDownload,
-	NewCheckComponents,
-	NewDesiredState,
-	NewHelmValidation,
-	NewKustomizationValidation,
-	NewStatus,
-	NewManifestValidation,
-	wire.Struct(new(Filters), "*"),
-	wire.Struct(new(Transformers), "*"),
+	mf "github.com/manifestival/manifestival"
 )
+
+type ManifestsReader interface {
+	FromString(ctx context.Context, manifests string) (mf.Manifest, error)
+	FromBytes(ctx context.Context, manifests []byte) (mf.Manifest, error)
+	FromPath(ctx context.Context, path string, recursive bool) (mf.Manifest, error)
+}

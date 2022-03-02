@@ -31,37 +31,37 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var _ = Describe("Kustomize Validation Test", func() {
+var _ = Describe("Helm Validation Test", func() {
 	var ctx context.Context
 	var statusWriterMock *mocks.StatusWriter
-	var kustomizeClientMock *mocks.KustomizationClient
-	var kustomizationValidation *module.KustomizationValidation
+	var helmClientMock *mocks.HelmClient
+	var helmValidation *module.HelmValidation
 
 	BeforeEach(func() {
 		ctx = context.TODO()
 		statusWriterMock = new(mocks.StatusWriter)
-		kustomizeClientMock = new(mocks.KustomizationClient)
-		kustomizationValidation = module.NewKustomizationValidation(kustomizeClientMock, statusWriterMock)
-		reconciler.Chain(kustomizationValidation)
+		helmClientMock = new(mocks.HelmClient)
+		helmValidation = module.NewHelmValidation(helmClientMock, statusWriterMock)
+		reconciler.Chain(helmValidation)
 	})
 
-	Context("when reconciling  kustomize manifests", func() {
+	Context("when reconciling  helm charts", func() {
 		It("should update status successfully when source are valid", func() {
 			expectedCondition := metav1.Condition{
 				Type:    charlescdv1alpha1.SourceValid,
 				Status:  metav1.ConditionTrue,
 				Reason:  "Validated",
-				Message: "Kustomization were successfully rendered",
+				Message: "Helm chart templates were successfully rendered",
 			}
-			mod := setupKustomizeModule()
+			mod := setupHelmModule()
 
-			kustomizeClientMock.On(
-				"Kustomize",
-				mock.Anything, mod.Status.Source.Path, mod.Spec.Kustomization.GitRepository.Path, mock.Anything,
+			helmClientMock.On(
+				"Template",
+				mock.Anything, mod.GetName(), mod.Status.Source.Path, mod.Spec.Helm.GitRepository.Path, mock.Anything,
 			).Return(mf.Manifest{}, nil)
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
 
-			_, err := kustomizationValidation.Reconcile(ctx, mod)
+			_, err := helmValidation.Reconcile(ctx, mod)
 
 			Expect(err).To(BeNil())
 			Expect(mod.Status.Conditions[1].Reason).To(Equal(expectedCondition.Reason))
@@ -72,16 +72,15 @@ var _ = Describe("Kustomize Validation Test", func() {
 
 		It("should update status correctly when fails to download resource", func() {
 			downloadError := errors.New("failed to download from source")
-			mod := setupKustomizeModule()
+			mod := setupHelmModule()
 
-			kustomizeClientMock.On(
-				"Kustomize",
-				mock.Anything, mod.Status.Source.Path, mod.Spec.Kustomization.GitRepository.Path, mock.Anything,
+			helmClientMock.On("Template",
+				mock.Anything, mod.GetName(), mod.Status.Source.Path, mod.Spec.Helm.GitRepository.Path, mock.Anything,
 			).Return(mf.Manifest{}, downloadError)
 
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
 
-			_, err := kustomizationValidation.Reconcile(ctx, mod)
+			_, err := helmValidation.Reconcile(ctx, mod)
 
 			Expect(err).To(BeNil())
 			Expect(mod.Status.Conditions[1].Type).To(Equal(charlescdv1alpha1.SourceValid))
@@ -91,10 +90,10 @@ var _ = Describe("Kustomize Validation Test", func() {
 	})
 })
 
-func setupKustomizeModule() *charlescdv1alpha1.Module {
+func setupHelmModule() *charlescdv1alpha1.Module {
 	module := new(charlescdv1alpha1.Module)
 	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}}
-	module.Spec.Kustomization = &charlescdv1alpha1.Kustomization{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Spec.Helm = &charlescdv1alpha1.Helm{GitRepository: &charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
 	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
 	return module
 }

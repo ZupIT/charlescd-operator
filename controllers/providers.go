@@ -39,6 +39,7 @@ var providers = wire.NewSet( //nolint // used for compile-time dependency inject
 	wire.Bind(new(client.ManifestsReader), new(*resources.Manifests)),
 	wire.Bind(new(module.GitRepositoryGetter), new(*client.GitRepository)),
 	wire.Bind(new(module.HelmClient), new(*client.Helm)),
+	wire.Bind(new(module.KustomizationClient), new(*client.Kustomization)),
 	wire.Bind(new(module.ManifestClient), new(*client.Manifest)),
 	wire.Bind(new(module.ManifestReader), new(*resources.Manifests)),
 	wire.Bind(new(module.ObjectConverter), new(*object.UnstructuredConverter)),
