@@ -20,20 +20,6 @@ import (
 	"github.com/ZupIT/charlescd-operator/pkg/module"
 )
 
-func getGitRepositoryWithoutArtifact() *v1beta1.GitRepository {
-	condition := metav1.Condition{
-		Type:    meta.ReadyCondition,
-		Status:  metav1.ConditionFalse,
-		Message: "Failed to download artifact",
-	}
-	return &v1beta1.GitRepository{
-		Spec: v1beta1.GitRepositorySpec{URL: manifestLocation},
-		Status: v1beta1.GitRepositoryStatus{
-			Conditions: []metav1.Condition{condition},
-		},
-	}
-}
-
 var _ = Describe("ArtifactDownload", func() {
 	var ctx context.Context
 	var statusWriterMock *mocks.StatusWriter
@@ -107,6 +93,55 @@ var _ = Describe("ArtifactDownload", func() {
 			Expect(mod.Status.Conditions[0].Message).To(Equal(expectedCondition.Message))
 		})
 
+		It("should return error when fails to get git repository", func() {
+			expectedError := errors.New("failed to get git repository")
+			mod := setupModule()
+			gitRepositoryGetter.On(
+				"GetGitRepository",
+				mock.Anything, types.NamespacedName{
+					Namespace: mod.GetNamespace(),
+					Name:      mod.GetName(),
+				},
+			).Return(nil, expectedError)
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(Equal(expectedError))
+
+		})
+
+		It("should not return error when not found git resource", func() {
+			mod := setupModule()
+			gitRepositoryGetter.On(
+				"GetGitRepository",
+				mock.Anything, types.NamespacedName{
+					Namespace: mod.GetNamespace(),
+					Name:      mod.GetName(),
+				},
+			).Return(nil, nil)
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(BeNil())
+
+		})
+
+		It("should not return error when artifact is not ready", func() {
+			mod := setupModule()
+			gitRepositoryGetter.On(
+				"GetGitRepository",
+				mock.Anything, types.NamespacedName{
+					Namespace: mod.GetNamespace(),
+					Name:      mod.GetName(),
+				},
+			).Return(getGitRepositoryWithoutArtifactAndConditions(), nil)
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(BeNil())
+
+		})
+
 		It("should update status successfully when url address is not valid", func() {
 
 			expectedCondition := metav1.Condition{
@@ -134,7 +169,7 @@ var _ = Describe("ArtifactDownload", func() {
 			Expect(mod.Status.Conditions[0].Reason).To(Equal(expectedCondition.Reason))
 		})
 
-		It("should return error when module has multiple repository ", func() {
+		It("should return error when module has multiple repository", func() {
 
 			mod := setupModuleWithMultipleRepositories()
 
@@ -197,6 +232,27 @@ func getGitRepositoryWithInvalidArtifact() *v1beta1.GitRepository {
 	return &v1beta1.GitRepository{
 		Spec:   v1beta1.GitRepositorySpec{URL: manifestLocation},
 		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "://user:abc{DEf1=ghi"}},
+	}
+}
+
+func getGitRepositoryWithoutArtifactAndConditions() *v1beta1.GitRepository {
+	return &v1beta1.GitRepository{
+		Spec:   v1beta1.GitRepositorySpec{URL: manifestLocation},
+		Status: v1beta1.GitRepositoryStatus{Artifact: nil},
+	}
+}
+
+func getGitRepositoryWithoutArtifact() *v1beta1.GitRepository {
+	condition := metav1.Condition{
+		Type:    meta.ReadyCondition,
+		Status:  metav1.ConditionFalse,
+		Message: "Failed to download artifact",
+	}
+	return &v1beta1.GitRepository{
+		Spec: v1beta1.GitRepositorySpec{URL: manifestLocation},
+		Status: v1beta1.GitRepositoryStatus{
+			Conditions: []metav1.Condition{condition},
+		},
 	}
 }
 func getArtifactData() string {

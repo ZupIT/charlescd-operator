@@ -29,13 +29,9 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
-type (
-	ManifestsReader interface {
-		FromString(ctx context.Context, manifests string) (mf.Manifest, error)
-		FromPath(ctx context.Context, path string, recursive bool) (mf.Manifest, error)
-	}
-	Helm struct{ manifests ManifestsReader }
-)
+type Helm struct {
+	manifests ManifestsReader
+}
 
 func NewHelm(manifests ManifestsReader) *Helm {
 	return &Helm{manifests: manifests}
