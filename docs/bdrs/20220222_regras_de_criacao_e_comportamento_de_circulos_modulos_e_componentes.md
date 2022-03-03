@@ -6,7 +6,7 @@
 
 ## Contexto
 
-**O que é um módulo?** Um módulo é um conjunto de componente deploiáveis pelo CharlesCD. É a a representação de um repositório de chart do git ou helm.
+**O que é um módulo?** Um módulo é um conjunto de componente gerenciados pelo CharlesCD. É a a representação de um repositório de chart do git ou helm.
 
 **O que é um componente?** Um componente é um item deploiável descrito no charts referenciado no módulo. É a representação de uma aplicação.
 
