@@ -16,23 +16,20 @@
 
 issues:
   exclude-rules:
-    - linters:
-        - gochecknoinits
+    - linters: [gochecknoinits]
       path: ^api/.*/(.*_types|groupversion_info)\.go
-    - linters:
-        - wrapcheck
+    - linters: [wrapcheck]
       text: "error returned from interface method should be wrapped:"
-    - linters:
-        - gochecknoinits
+    - linters: [gochecknoinits]
       path: ^main\.go
-    - linters:
-        - gocritic
+    - linters: [gocritic]
       path: ^main\.go
       text: "exitAfterDefer:"
-    - linters:
-        - gosec
+    - linters: [gosec]
       source: \.FromUnstructured\(&?[a-zA-Z]+,\s[a-zA-Z]+\)
       text: "G601:"
+    - linters: [lll]
+      source: '^//\s?\+kubebuilder:'
   max-issues-per-linter: 0
   max-same-issues: 0
 
