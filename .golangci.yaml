@@ -34,13 +34,13 @@ linters:
   disable:
     - exhaustivestruct
     - gci
-    - maligned
-    - scopelint
+    - maligned # replaced by govet 'fieldalignment'
+    - scopelint # replaced by 'exportloopref'
   enable:
-    - ifshort
-    - predeclared
     - gochecknoinits
+    - ifshort
     - lll
+    - predeclared
   presets:
     - unused
     - bugs
