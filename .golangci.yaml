@@ -17,11 +17,17 @@
 issues:
   exclude-rules:
     - linters:
+        - gochecknoinits
+      path: ^api/.*/(.*_types|groupversion_info)\.go
+    - linters:
         - wrapcheck
       text: "error returned from interface method should be wrapped:"
     - linters:
+        - gochecknoinits
+      path: ^main\.go
+    - linters:
         - gocritic
-      path: main.go
+      path: ^main\.go
       text: "exitAfterDefer:"
     - linters:
         - gosec
