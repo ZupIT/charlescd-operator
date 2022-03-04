@@ -42,6 +42,7 @@ linters:
   enable:
     - gochecknoinits
     - ifshort
+    - importas
     - lll
     - predeclared
   presets:
@@ -59,6 +60,17 @@ linters:
 linters-settings:
   godot:
     period: false
+  importas:
+    alias:
+      - alias: charlescd$1
+        pkg: github\.com/tiagoangelozup/charles-alpha/api/(v[\w\d]+)
+      - alias: ctrl
+        pkg: sigs\.k8s\.io/controller-runtime
+      - alias: $1$2
+        pkg: k8s\.io/api/(\w+)/(v[\w\d]+)
+      - alias: $1$2
+        pkg: github\.com/fluxcd/(\w+)-controller/api/(v[\w\d]+)
+    no-unaliased: true
   staticcheck:
     checks: ["all", "-SA9004"]
     go: "1.17"
