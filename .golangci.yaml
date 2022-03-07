@@ -34,6 +34,8 @@ issues:
       text: "G601:"
     - linters: [lll]
       source: '^//\s?\+kubebuilder:'
+    - linters: [lll]
+      source: '^func\s'
   max-issues-per-linter: 0
   max-same-issues: 0
 
