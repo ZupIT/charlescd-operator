@@ -14,10 +14,7 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
-const (
-	kubernetesAPIError = "KubernetesAPIError"
-	renderError        = "RenderError"
-)
+const renderError = "RenderError"
 
 type (
 	HelmClient interface {
