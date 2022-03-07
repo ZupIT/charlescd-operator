@@ -28,7 +28,7 @@ import (
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
 )
 
-var providers = wire.NewSet(
+var providers = wire.NewSet( //nolint // used for compile-time dependency injection
 	reconcilers,
 	newModuleReconciler,
 	client.Providers,
