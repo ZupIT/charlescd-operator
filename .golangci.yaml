@@ -51,6 +51,7 @@ linters:
     - ifshort
     - importas
     - lll
+    - nolintlint
     - predeclared
   presets:
     - unused
