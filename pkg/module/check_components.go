@@ -69,8 +69,7 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 		components = append(components, component)
 	}
 
-	total := len(components)
-	if total > 0 {
+	if total := len(components); total > 0 {
 		log.Info("Deployable components found", "total", total)
 	} else {
 		log.Info("No deployable components were found")
