@@ -2,14 +2,14 @@ package module
 
 import (
 	"github.com/fluxcd/pkg/apis/meta"
-	"github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type gitRepoStatus struct{ *v1beta1.GitRepository }
+type gitRepoStatus struct{ *sourcev1beta1.GitRepository }
 
-func statusOf(gitRepo *v1beta1.GitRepository) *gitRepoStatus {
+func statusOf(gitRepo *sourcev1beta1.GitRepository) *gitRepoStatus {
 	return &gitRepoStatus{GitRepository: gitRepo}
 }
 

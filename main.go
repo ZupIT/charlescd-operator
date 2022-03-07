@@ -24,7 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	zapr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/controllers"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	//+kubebuilder:scaffold:imports
@@ -47,8 +47,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(deployv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(sourcev1.AddToScheme(scheme))
+	utilruntime.Must(charlescdv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(sourcev1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

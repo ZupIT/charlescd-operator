@@ -27,7 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -40,8 +40,8 @@ func NewModule(client client.Client) *Module {
 	return &Module{client: client}
 }
 
-func (s *Module) GetModule(ctx context.Context, key client.ObjectKey) (*deployv1alpha1.Module, error) {
-	m := new(deployv1alpha1.Module)
+func (s *Module) GetModule(ctx context.Context, key client.ObjectKey) (*charlescdv1alpha1.Module, error) {
+	m := new(charlescdv1alpha1.Module)
 	err := s.client.Get(ctx, key, m)
 	if errors.IsNotFound(err) {
 		return nil, nil
@@ -52,7 +52,7 @@ func (s *Module) GetModule(ctx context.Context, key client.ObjectKey) (*deployv1
 	return m, nil
 }
 
-func (s *Module) UpdateModuleStatus(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (s *Module) UpdateModuleStatus(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)

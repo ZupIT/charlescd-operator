@@ -20,21 +20,21 @@ import (
 	"context"
 
 	"github.com/angelokurtis/reconciler"
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/event"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	"github.com/tiagoangelozup/charles-alpha/pkg/module"
 )
 
 type ModuleGetter interface {
-	GetModule(ctx context.Context, key client.ObjectKey) (*deployv1alpha1.Module, error)
+	GetModule(ctx context.Context, key client.ObjectKey) (*charlescdv1alpha1.Module, error)
 }
 
 type ModuleHandler struct {
@@ -91,8 +91,8 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&deployv1alpha1.Module{}).
-		Owns(&sourcev1.GitRepository{}).
+		For(&charlescdv1alpha1.Module{}).
+		Owns(&sourcev1beta1.GitRepository{}).
 		WithEventFilter(predicate.Or(
 			event.NewRepoStatusPredicate(),
 			event.NewModulePredicate(),

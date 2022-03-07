@@ -75,6 +75,8 @@ linters-settings:
         pkg: k8s\.io/api/(\w+)/(v[\w\d]+)
       - alias: $1$2
         pkg: github\.com/fluxcd/(\w+)-controller/api/(v[\w\d]+)
+      - alias: mf
+        pkg: github\.com/manifestival/manifestival
     no-unaliased: true
   staticcheck:
     checks: ["all", "-SA9004"]

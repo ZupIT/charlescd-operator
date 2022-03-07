@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -33,11 +33,11 @@ func NewGitRepository(client client.Client) *GitRepository {
 	return &GitRepository{client: client}
 }
 
-func (s *GitRepository) GetGitRepository(ctx context.Context, key client.ObjectKey) (*sourcev1.GitRepository, error) {
+func (s *GitRepository) GetGitRepository(ctx context.Context, key client.ObjectKey) (*sourcev1beta1.GitRepository, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 
-	m := new(sourcev1.GitRepository)
+	m := new(sourcev1beta1.GitRepository)
 	err := s.client.Get(ctx, key, m)
 	if errors.IsNotFound(err) {
 		return nil, nil
