@@ -18,6 +18,7 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -36,7 +37,7 @@ func (c *closer) Close() error {
 	}
 
 	if err := tp.Shutdown(ctx); err != nil {
-		return err
+		return fmt.Errorf("error flushing spans before shutdown: %w", err)
 	}
 
 	return nil

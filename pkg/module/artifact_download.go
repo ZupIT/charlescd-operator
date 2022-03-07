@@ -153,23 +153,23 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 
 	res, err := http.Get(artifact.URL)
 	if err != nil {
-		return err
+		return fmt.Errorf("error downloading source artifact: %w", err)
 	}
 	defer res.Body.Close()
 
 	index := strings.LastIndex(filepath, "/")
 	if err = os.MkdirAll(filepath[:index], os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("error creating local temporary directory: %w", err)
 	}
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating local temporary file: %w", err)
 	}
 	defer out.Close()
 
 	if _, err = io.Copy(out, res.Body); err != nil {
-		return err
+		return fmt.Errorf("error writing source artifact to a local file: %w", err)
 	}
 
 	return nil
