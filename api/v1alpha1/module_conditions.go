@@ -82,8 +82,8 @@ func (in *Module) updatePhase() {
 	}
 }
 
-func updated(old, new client.Object) bool {
-	patch := client.MergeFrom(old)
-	data, _ := patch.Data(new)
+func updated(oldest, newest client.Object) bool {
+	patch := client.MergeFrom(oldest)
+	data, _ := patch.Data(newest)
 	return string(data) != "{}"
 }
