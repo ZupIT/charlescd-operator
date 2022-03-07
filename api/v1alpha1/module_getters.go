@@ -1,8 +1,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
@@ -19,7 +17,7 @@ func (in *Module) GetGitRepository() (*GitRepository, error) {
 	}
 	total := len(repos)
 	if total > 1 {
-		return nil, fmt.Errorf("invalid module definition: expected 1 GitRepository, got %d", total)
+		return nil, &MultipleGitRepositoryError{expected: 1, got: total}
 	}
 	if total == 1 {
 		return repos[0], nil
