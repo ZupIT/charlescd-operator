@@ -78,7 +78,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return r.Finish(ctx) // Module resource not found. Ignoring since object must be deleted
 	}
 
-	ctx = logf.IntoContext(ctx, log.WithValues("name", m.Name, "namespace", m.Namespace, "resourceVersion", m.ResourceVersion))
+	ctx = logf.IntoContext(ctx, log.WithValues(
+		"name", m.Name,
+		"namespace", m.Namespace,
+		"resourceVersion", m.ResourceVersion))
 	return reconciler.Chain(
 		r.handle.Status,
 		r.handle.DesiredState,
