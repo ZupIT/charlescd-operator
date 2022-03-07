@@ -16,17 +16,21 @@
 
 issues:
   exclude-rules:
-    - linters: [gochecknoinits]
-      path: ^api/.*/(.*_types|groupversion_info)\.go
-    - linters: [wrapcheck]
-      text: "error returned from interface method should be wrapped:"
-    - linters: [gochecknoinits]
-      path: ^main\.go
     - linters: [gocritic]
       path: ^main\.go
       text: "exitAfterDefer:"
+    - linters: [gochecknoglobals, gochecknoinits]
+      path: ^main\.go
+    - linters: [gochecknoglobals, gochecknoinits]
+      path: ^api/.*/(.*_types|groupversion_info)\.go
+    - linters: [gochecknoglobals]
+      source: \swire\.NewSet\(
+    - linters: [gochecknoglobals]
+      source: \sctrl\.Log\.WithName\([^)]*\)
+    - linters: [wrapcheck]
+      text: "error returned from interface method should be wrapped:"
     - linters: [gosec]
-      source: \.FromUnstructured\(&?[a-zA-Z]+,\s[a-zA-Z]+\)
+      source: \.FromUnstructured\(&?\w+,\s\w+\)
       text: "G601:"
     - linters: [lll]
       source: '^//\s?\+kubebuilder:'
@@ -40,6 +44,7 @@ linters:
     - maligned # replaced by govet 'fieldalignment'
     - scopelint # replaced by 'exportloopref'
   enable:
+    - gochecknoglobals
     - gochecknoinits
     - ifshort
     - importas
@@ -78,7 +83,7 @@ linters-settings:
     ignorePackageGlobs:
       - github.com/tiagoangelozup/charles-alpha/*
     ignoreSigRegexps:
-      - func\s\(\*github\.com/angelokurtis/reconciler\.[a-zA-Z]+\)\.[a-zA-Z]+\([^)]*\)
+      - func\s\(\*github\.com/angelokurtis/reconciler\.\w+\)\.\w+\([^)]*\)
       - func\s\(\*sigs\.k8s\.io/controller-runtime/pkg/builder\.Builder\)\.Complete\([^)]*\)
 
 output:
