@@ -1,7 +1,7 @@
 package event
 
 import (
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -18,11 +18,11 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 	if objOld == nil || objNew == nil {
 		return false
 	}
-	repoOld, ok := objOld.(*sourcev1.GitRepository)
+	repoOld, ok := objOld.(*sourcev1beta1.GitRepository)
 	if !ok {
 		return false
 	}
-	repoNew, ok := objNew.(*sourcev1.GitRepository)
+	repoNew, ok := objNew.(*sourcev1beta1.GitRepository)
 	if !ok {
 		return false
 	}
@@ -32,8 +32,8 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"namespace", objNew.GetNamespace(),
 			"resourceVersion", objNew.GetResourceVersion(),
 			"diff", diff(
-				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
-				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
+				&sourcev1beta1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
+				&sourcev1beta1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
 			Info("GitRepository updated")
 		return true
 	}
@@ -43,8 +43,8 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"namespace", objNew.GetNamespace(),
 			"resourceVersion", objNew.GetResourceVersion(),
 			"diff", diff(
-				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
-				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
+				&sourcev1beta1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
+				&sourcev1beta1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
 			Info("GitRepository updated")
 		return true
 	}
@@ -56,7 +56,7 @@ func (g *RepoStatusPredicate) Delete(event event.DeleteEvent) bool {
 	if obj == nil {
 		return false
 	}
-	if _, ok := obj.(*sourcev1.GitRepository); !ok {
+	if _, ok := obj.(*sourcev1beta1.GitRepository); !ok {
 		return false
 	}
 	log.WithValues("name", obj.GetName(),

@@ -28,14 +28,14 @@ import (
 	"strings"
 
 	"github.com/angelokurtis/reconciler"
-	"github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -50,7 +50,7 @@ type Helm interface {
 }
 
 type GitRepositoryGetter interface {
-	GetGitRepository(ctx context.Context, key client.ObjectKey) (*v1beta1.GitRepository, error)
+	GetGitRepository(ctx context.Context, key client.ObjectKey) (*sourcev1beta1.GitRepository, error)
 }
 
 type ArtifactDownload struct {
@@ -65,7 +65,7 @@ func NewArtifactDownload(git GitRepositoryGetter, status StatusWriter) *Artifact
 }
 
 func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	module, ok := obj.(*deployv1alpha1.Module)
+	module, ok := obj.(*charlescdv1alpha1.Module)
 	if !ok {
 		return a.Next(ctx, obj)
 	}
@@ -79,7 +79,7 @@ func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ct
 	return a.reconcile(ctx, module)
 }
 
-func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (a *ArtifactDownload) reconcile(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
@@ -138,7 +138,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	return a.updateStatusToReady(ctx, module, filepath)
 }
 
-func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
+func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifact *sourcev1beta1.Artifact) error {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 
@@ -190,7 +190,7 @@ func (a *ArtifactDownload) checksum(filepath, checksum string) bool {
 	return fmt.Sprintf("%x", h.Sum(nil)) == checksum
 }
 
-func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *deployv1alpha1.Module, filepath string) (ctrl.Result, error) {
+func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *charlescdv1alpha1.Module, filepath string) (ctrl.Result, error) {
 	if module.SetSourceReady(filepath) {
 		return a.status.UpdateModuleStatus(ctx, module)
 	}

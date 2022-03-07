@@ -11,7 +11,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -32,7 +32,7 @@ func NewCheckComponents(manifest ManifestReader, object ObjectConverter, status 
 }
 
 func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	module, ok := obj.(*deployv1alpha1.Module)
+	module, ok := obj.(*charlescdv1alpha1.Module)
 	if !ok || !module.IsSourceValid() || !module.IsSourceReady() {
 		return c.Next(ctx, obj)
 	}
@@ -43,7 +43,7 @@ func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctr
 	return c.reconcile(ctx, module, resources)
 }
 
-func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
+func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
@@ -53,15 +53,15 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.
 		return c.RequeueOnErr(ctx, err)
 	}
 
-	components := make([]*deployv1alpha1.Component, 0, 0)
+	components := make([]*charlescdv1alpha1.Component, 0, 0)
 	for _, u := range manifests.Filter(mf.ByKind("Deployment")).Resources() {
 		deploy := &appsv1.Deployment{}
 		if err := c.object.FromUnstructured(&u, deploy); err != nil {
 			return c.RequeueOnErr(ctx, err)
 		}
-		component := &deployv1alpha1.Component{Name: deploy.GetName()}
+		component := &charlescdv1alpha1.Component{Name: deploy.GetName()}
 		for _, container := range deploy.Spec.Template.Spec.Containers {
-			component.Containers = append(component.Containers, &deployv1alpha1.Container{
+			component.Containers = append(component.Containers, &charlescdv1alpha1.Container{
 				Name:  container.Name,
 				Image: container.Image,
 			})

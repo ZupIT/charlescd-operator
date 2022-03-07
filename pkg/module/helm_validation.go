@@ -10,7 +10,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -36,14 +36,14 @@ func NewHelmValidation(helm HelmClient, status StatusWriter) *HelmValidation {
 }
 
 func (h *HelmValidation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	module, ok := obj.(*deployv1alpha1.Module)
+	module, ok := obj.(*charlescdv1alpha1.Module)
 	if !ok || module.Spec.Helm == nil || !module.IsSourceReady() {
 		return h.Next(ctx, obj)
 	}
 	return h.reconcile(ctx, module, module.Spec.Helm)
 }
 
-func (h *HelmValidation) reconcile(ctx context.Context, module *deployv1alpha1.Module, helm *deployv1alpha1.Helm) (ctrl.Result, error) {
+func (h *HelmValidation) reconcile(ctx context.Context, module *charlescdv1alpha1.Module, helm *charlescdv1alpha1.Helm) (ctrl.Result, error) {
 	// check if this handler should act
 	if module.Status.Source == nil || module.Status.Source.Path == "" {
 		return h.Next(ctx, module)
