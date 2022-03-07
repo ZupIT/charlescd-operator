@@ -65,5 +65,9 @@ func (h *Helm) template(ctx context.Context, releaseName, chart string, values m
 	client.ClientOnly = true
 	client.IncludeCRDs = true
 
-	return client.RunWithContext(ctx, c, values)
+	r, err := client.RunWithContext(ctx, c, values)
+	if err != nil {
+		return nil, fmt.Errorf("error rendering Helm chart templates: %w", err)
+	}
+	return r, nil
 }

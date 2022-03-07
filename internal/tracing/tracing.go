@@ -18,6 +18,7 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"runtime"
@@ -54,7 +55,7 @@ func Initialize() (io.Closer, error) {
 		collectorEndpoint := jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(endpoint))
 		e, err := jaeger.New(collectorEndpoint)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error configuring Jaeger exporter: %w", err)
 		}
 		options = append(options, tracesdk.WithBatcher(e))
 	}
