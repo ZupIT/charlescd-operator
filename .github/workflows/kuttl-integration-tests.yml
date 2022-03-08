@@ -14,7 +14,7 @@
   # limitations under the License.
 #
 
-name: Charles Operator Test
+name: Kuttl integration test
 
 on:
   push:
