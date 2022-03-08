@@ -1,0 +1,47 @@
+ #
+  # Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #  http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+#
+
+name: Kuttl integration test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 #v3.0.0
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@2a525709fd0874b75d7ae842d257981b0e0f557d #v0.11.1
+      - name: Set environment
+        run: |
+          (
+              set -x; cd "$(mktemp -d)" &&
+              OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+              ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+              KREW="krew-${OS}_${ARCH}" &&
+              curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+              tar zxvf "${KREW}.tar.gz" &&
+              ./"${KREW}" install krew
+          )
+          docker build -t charlescd:latest .
+      - name: Install and run kuttl tests
+        run: |
+          export PATH=KREW_ROOT:$HOME/.krew/bin:$PATH
+          kubectl krew install kuttl 
+          kubectl krew install assert
+          kubectl kuttl test
