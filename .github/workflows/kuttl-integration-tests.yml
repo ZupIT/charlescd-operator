@@ -29,10 +29,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.2.0
+<<<<<<< HEAD
+=======
       - name: Setup go
         uses: actions/setup-go@v3
         with:
           go-version: 'v1.17'
+>>>>>>> 800f2e3... add kuttl tests
       - name: Set environment
         run: |
           (
