@@ -17,8 +17,6 @@
 name: Kuttl integration test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -26,9 +24,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 #v3.0.0
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.2.0
+        uses: helm/kind-action@2a525709fd0874b75d7ae842d257981b0e0f557d #v0.11.1
       - name: Set environment
         run: |
           (
