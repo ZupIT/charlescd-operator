@@ -1,0 +1,8 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindContainers:
+- charlescd:latest
+testDirs:
+- tests/integration/
+timeout: 120

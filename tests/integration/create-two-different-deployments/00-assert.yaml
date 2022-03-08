@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+status:
+  phase: Running
+commands:
+- command: kubectl assert exist-enhanced deployment integration-test-2 -n $NAMESPACE --field-selector status.readyReplicas=3
+- command: kubectl assert exist-enhanced deployment integration-test-1 -n $NAMESPACE --field-selector status.readyReplicas=3

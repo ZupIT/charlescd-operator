@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+status:
+  phase: Running
+commands:
+- command: kubectl assert exist-enhanced service my-nginx-svc -n $NAMESPACE --field-selector status.readyReplicas=3
