@@ -23,3 +23,7 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# test with kuttl
+kubeconfig
+kind-logs*

@@ -92,7 +92,7 @@ Feel free to reach out to us at:
 - If you have any questions or ideas, let's chat in our [**Zup Open Source Forum**](https://forum.zup.com.br).
 
 
-Thank you for evoluting CharlesCD!!!:heart::heart::heart:
+Thank you for evolving CharlesCD!!!:heart::heart::heart:
 
 Keep evolving :rocket
 
