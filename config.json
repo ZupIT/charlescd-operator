@@ -32,7 +32,9 @@
       "**/*.sum",
       "**/*.ico",
       "**/*.tpl",
-      "**/*.txt"
+      "**/*.txt",
+      "**/wire_gen.go",
+      "go.mod"
     ],
     "startDateLicense": 2022
   }
