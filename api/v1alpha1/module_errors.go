@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transformer
+package v1alpha1
 
-import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+import "fmt"
 
-type ObjectConverter interface {
-	FromUnstructured(in *unstructured.Unstructured, out interface{}) error
-	ToUnstructured(in interface{}, out *unstructured.Unstructured) error
+//+kubebuilder:object:generate=false
+type MultipleGitRepositoryError struct{ expected, got int }
+
+func (e *MultipleGitRepositoryError) Error() string {
+	return fmt.Sprintf("invalid module definition: expected %d GitRepository, got %d", e.expected, e.got)
 }
