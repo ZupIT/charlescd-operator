@@ -86,7 +86,11 @@ linters-settings:
     go: "1.17"
   wrapcheck:
     ignorePackageGlobs:
+<<<<<<< HEAD
       - github.com/tiagoangelozup/charles-alpha/*
+=======
+      - github.com/ZupIT/charlescd-operator/*
+>>>>>>> b9ad6cc8bbff9891be950e23f14133cd954d8f0b
     ignoreSigRegexps:
       - func\s\(\*github\.com/angelokurtis/reconciler\.\w+\)\.\w+\([^)]*\)
       - func\s\(\*sigs\.k8s\.io/controller-runtime/pkg/builder\.Builder\)\.Complete\([^)]*\)

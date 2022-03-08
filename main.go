@@ -32,9 +32,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	zapr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+<<<<<<< HEAD
 	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/controllers"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
+=======
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
+	"github.com/ZupIT/charlescd-operator/controllers"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
+>>>>>>> b9ad6cc8bbff9891be950e23f14133cd954d8f0b
 	//+kubebuilder:scaffold:imports
 )
 

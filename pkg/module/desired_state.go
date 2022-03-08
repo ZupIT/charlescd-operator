@@ -22,10 +22,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+<<<<<<< HEAD
 	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
 	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
+=======
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
+	"github.com/ZupIT/charlescd-operator/pkg/filter"
+	"github.com/ZupIT/charlescd-operator/pkg/transformer"
+>>>>>>> b9ad6cc8bbff9891be950e23f14133cd954d8f0b
 )
 
 type (
