@@ -7,14 +7,14 @@
 package controllers
 
 import (
+	"github.com/ZupIT/charlescd-operator/internal/client"
+	"github.com/ZupIT/charlescd-operator/internal/object"
+	"github.com/ZupIT/charlescd-operator/internal/resources"
+	"github.com/ZupIT/charlescd-operator/internal/runtime"
+	"github.com/ZupIT/charlescd-operator/pkg/filter"
+	"github.com/ZupIT/charlescd-operator/pkg/module"
+	"github.com/ZupIT/charlescd-operator/pkg/transformer"
 	client2 "github.com/manifestival/client-go-client"
-	"github.com/tiagoangelozup/charles-alpha/internal/client"
-	"github.com/tiagoangelozup/charles-alpha/internal/object"
-	"github.com/tiagoangelozup/charles-alpha/internal/resources"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
-	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
-	"github.com/tiagoangelozup/charles-alpha/pkg/module"
-	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 

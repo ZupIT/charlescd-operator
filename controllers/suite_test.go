@@ -28,7 +28,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	deployv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

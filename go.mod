@@ -1,4 +1,4 @@
-module github.com/tiagoangelozup/charles-alpha
+module github.com/ZupIT/charlescd-operator
 
 go 1.17
 

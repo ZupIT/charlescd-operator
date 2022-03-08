@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	module      = "github.com/tiagoangelozup/charles-alpha"
+	module      = "github.com/ZupIT/charlescd-operator"
 	service     = "charles"
 	envEndpoint = "OTEL_EXPORTER_JAEGER_ENDPOINT"
 )

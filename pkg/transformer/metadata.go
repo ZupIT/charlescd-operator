@@ -18,7 +18,7 @@ import (
 	mf "github.com/manifestival/manifestival"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 )
 
 type Metadata struct{ reference ObjectReference }

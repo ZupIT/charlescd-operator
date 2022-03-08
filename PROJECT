@@ -5,7 +5,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: charles-alpha
-repo: github.com/tiagoangelozup/charles-alpha
+repo: github.com/ZupIT/charlescd-operator
 resources:
 - api:
     crdVersion: v1
@@ -14,6 +14,6 @@ resources:
   domain: charlescd.io
   group: deploy
   kind: Module
-  path: github.com/tiagoangelozup/charles-alpha/api/v1alpha1
+  path: github.com/ZupIT/charlescd-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

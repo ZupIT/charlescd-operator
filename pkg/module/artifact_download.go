@@ -33,8 +33,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 const (

@@ -17,7 +17,7 @@ package event
 import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 )
 
 type ModulePredicate struct{}
