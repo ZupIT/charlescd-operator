@@ -1,3 +1,17 @@
+// Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package module
 
 import (
@@ -11,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -32,7 +46,7 @@ func NewCheckComponents(manifest ManifestReader, object ObjectConverter, status 
 }
 
 func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	module, ok := obj.(*deployv1alpha1.Module)
+	module, ok := obj.(*charlescdv1alpha1.Module)
 	if !ok || !module.IsSourceValid() || !module.IsSourceReady() {
 		return c.Next(ctx, obj)
 	}
@@ -43,7 +57,7 @@ func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctr
 	return c.reconcile(ctx, module, resources)
 }
 
-func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
+func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
@@ -53,15 +67,15 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.
 		return c.RequeueOnErr(ctx, err)
 	}
 
-	components := make([]*deployv1alpha1.Component, 0, 0)
+	components := make([]*charlescdv1alpha1.Component, 0, 0)
 	for _, u := range manifests.Filter(mf.ByKind("Deployment")).Resources() {
 		deploy := &appsv1.Deployment{}
 		if err := c.object.FromUnstructured(&u, deploy); err != nil {
 			return c.RequeueOnErr(ctx, err)
 		}
-		component := &deployv1alpha1.Component{Name: deploy.GetName()}
+		component := &charlescdv1alpha1.Component{Name: deploy.GetName()}
 		for _, container := range deploy.Spec.Template.Spec.Containers {
-			component.Containers = append(component.Containers, &deployv1alpha1.Container{
+			component.Containers = append(component.Containers, &charlescdv1alpha1.Container{
 				Name:  container.Name,
 				Image: container.Image,
 			})
@@ -69,8 +83,7 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *deployv1alpha1.
 		components = append(components, component)
 	}
 
-	total := len(components)
-	if total > 0 {
+	if total := len(components); total > 0 {
 		log.Info("Deployable components found", "total", total)
 	} else {
 		log.Info("No deployable components were found")

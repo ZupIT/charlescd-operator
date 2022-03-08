@@ -1,7 +1,21 @@
+// Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package event
 
 import (
-	sourcev1 "github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -18,11 +32,11 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 	if objOld == nil || objNew == nil {
 		return false
 	}
-	repoOld, ok := objOld.(*sourcev1.GitRepository)
+	repoOld, ok := objOld.(*sourcev1beta1.GitRepository)
 	if !ok {
 		return false
 	}
-	repoNew, ok := objNew.(*sourcev1.GitRepository)
+	repoNew, ok := objNew.(*sourcev1beta1.GitRepository)
 	if !ok {
 		return false
 	}
@@ -32,8 +46,8 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"namespace", objNew.GetNamespace(),
 			"resourceVersion", objNew.GetResourceVersion(),
 			"diff", diff(
-				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
-				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
+				&sourcev1beta1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
+				&sourcev1beta1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
 			Info("GitRepository updated")
 		return true
 	}
@@ -43,8 +57,8 @@ func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 			"namespace", objNew.GetNamespace(),
 			"resourceVersion", objNew.GetResourceVersion(),
 			"diff", diff(
-				&sourcev1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
-				&sourcev1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
+				&sourcev1beta1.GitRepository{Spec: repoOld.Spec, Status: repoOld.Status},
+				&sourcev1beta1.GitRepository{Spec: repoNew.Spec, Status: repoNew.Status})).
 			Info("GitRepository updated")
 		return true
 	}
@@ -56,7 +70,7 @@ func (g *RepoStatusPredicate) Delete(event event.DeleteEvent) bool {
 	if obj == nil {
 		return false
 	}
-	if _, ok := obj.(*sourcev1.GitRepository); !ok {
+	if _, ok := obj.(*sourcev1beta1.GitRepository); !ok {
 		return false
 	}
 	log.WithValues("name", obj.GetName(),
