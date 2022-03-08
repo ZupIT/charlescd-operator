@@ -17,13 +17,13 @@ package controllers
 import (
 	"github.com/google/wire"
 
-	"github.com/tiagoangelozup/charles-alpha/internal/client"
-	"github.com/tiagoangelozup/charles-alpha/internal/object"
-	"github.com/tiagoangelozup/charles-alpha/internal/resources"
-	"github.com/tiagoangelozup/charles-alpha/internal/runtime"
-	"github.com/tiagoangelozup/charles-alpha/pkg/filter"
-	"github.com/tiagoangelozup/charles-alpha/pkg/module"
-	"github.com/tiagoangelozup/charles-alpha/pkg/transformer"
+	"github.com/ZupIT/charlescd-operator/internal/client"
+	"github.com/ZupIT/charlescd-operator/internal/object"
+	"github.com/ZupIT/charlescd-operator/internal/resources"
+	"github.com/ZupIT/charlescd-operator/internal/runtime"
+	"github.com/ZupIT/charlescd-operator/pkg/filter"
+	"github.com/ZupIT/charlescd-operator/pkg/module"
+	"github.com/ZupIT/charlescd-operator/pkg/transformer"
 )
 
 var providers = wire.NewSet( //nolint // used for compile-time dependency injection

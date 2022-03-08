@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 type GitRepository struct{ client client.Client }

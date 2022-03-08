@@ -25,10 +25,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
-	"github.com/tiagoangelozup/charles-alpha/internal/event"
-	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
-	"github.com/tiagoangelozup/charles-alpha/pkg/module"
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
+	"github.com/ZupIT/charlescd-operator/internal/event"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
+	"github.com/ZupIT/charlescd-operator/pkg/module"
 )
 
 type ModuleGetter interface {
