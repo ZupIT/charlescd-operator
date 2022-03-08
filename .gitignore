@@ -23,3 +23,7 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# integation tests logs and config file
+kubeconfig
+kind-logs*
