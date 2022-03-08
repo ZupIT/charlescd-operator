@@ -109,12 +109,15 @@ vet: ## Run go vet against code.
 inject: wire ## Compile-time dependency injection.
 	$(WIRE) ./...
 
+copyright: addlicense ## Ensures source code files have copyright license headers.
+	$(ADDLICENSE) -ignore "./vendor/**" -c "ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA" -l "apache" $(shell find -regex '.*\.\(go\|yml\|yaml\|sh\)')
+
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
-build: generate inject fmt vet ## Build manager binary.
+build: generate inject copyright fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -154,9 +157,13 @@ WIRE = $(shell pwd)/bin/wire
 wire: ## Download wire locally if necessary.
 	$(call go-get-tool,$(WIRE),github.com/google/wire/cmd/wire@v0.5.0)
 
+ADDLICENSE = $(shell pwd)/bin/addlicense
+addlicense: ## Download addlicense locally if necessary.
+	$(call go-get-tool,$(ADDLICENSE),github.com/google/addlicense@v1.0.0)
+
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20220304125252-9ee63fc65a97)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -167,7 +174,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef

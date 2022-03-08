@@ -1,18 +1,16 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package module
 
@@ -28,14 +26,14 @@ import (
 	"strings"
 
 	"github.com/angelokurtis/reconciler"
-	"github.com/fluxcd/source-controller/api/v1beta1"
+	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
 )
 
@@ -50,7 +48,7 @@ type Helm interface {
 }
 
 type GitRepositoryGetter interface {
-	GetGitRepository(ctx context.Context, key client.ObjectKey) (*v1beta1.GitRepository, error)
+	GetGitRepository(ctx context.Context, key client.ObjectKey) (*sourcev1beta1.GitRepository, error)
 }
 
 type ArtifactDownload struct {
@@ -65,7 +63,7 @@ func NewArtifactDownload(git GitRepositoryGetter, status StatusWriter) *Artifact
 }
 
 func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	module, ok := obj.(*deployv1alpha1.Module)
+	module, ok := obj.(*charlescdv1alpha1.Module)
 	if !ok {
 		return a.Next(ctx, obj)
 	}
@@ -79,7 +77,7 @@ func (a *ArtifactDownload) Reconcile(ctx context.Context, obj client.Object) (ct
 	return a.reconcile(ctx, module)
 }
 
-func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1.Module) (ctrl.Result, error) {
+func (a *ArtifactDownload) reconcile(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 	log := logr.FromContextOrDiscard(ctx)
@@ -138,7 +136,7 @@ func (a *ArtifactDownload) reconcile(ctx context.Context, module *deployv1alpha1
 	return a.updateStatusToReady(ctx, module, filepath)
 }
 
-func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifact *v1beta1.Artifact) error {
+func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifact *sourcev1beta1.Artifact) error {
 	span, ctx := tracing.StartSpanFromContext(ctx)
 	defer span.Finish()
 
@@ -149,27 +147,31 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 	// }
 	// u.Scheme = "http"
 	// u.Host = "127.0.0.1:9090"
-	// res, err := http.Get(u.String())
+	// req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 
-	res, err := http.Get(artifact.URL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, artifact.URL, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("error downloading source artifact: %w", err)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error downloading source artifact: %w", err)
 	}
 	defer res.Body.Close()
 
 	index := strings.LastIndex(filepath, "/")
 	if err = os.MkdirAll(filepath[:index], os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("error creating local temporary directory: %w", err)
 	}
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating local temporary file: %w", err)
 	}
 	defer out.Close()
 
 	if _, err = io.Copy(out, res.Body); err != nil {
-		return err
+		return fmt.Errorf("error writing source artifact to a local file: %w", err)
 	}
 
 	return nil
@@ -190,7 +192,7 @@ func (a *ArtifactDownload) checksum(filepath, checksum string) bool {
 	return fmt.Sprintf("%x", h.Sum(nil)) == checksum
 }
 
-func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *deployv1alpha1.Module, filepath string) (ctrl.Result, error) {
+func (a *ArtifactDownload) updateStatusToReady(ctx context.Context, module *charlescdv1alpha1.Module, filepath string) (ctrl.Result, error) {
 	if module.SetSourceReady(filepath) {
 		return a.status.UpdateModuleStatus(ctx, module)
 	}

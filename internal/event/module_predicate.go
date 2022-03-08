@@ -1,9 +1,23 @@
+// Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package event
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	"github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
 )
 
 type ModulePredicate struct{}
@@ -15,7 +29,7 @@ func (m *ModulePredicate) Create(event event.CreateEvent) bool {
 	if obj == nil {
 		return false
 	}
-	if _, ok := obj.(*v1alpha1.Module); !ok {
+	if _, ok := obj.(*charlescdv1alpha1.Module); !ok {
 		return false
 	}
 	log.WithValues("name", obj.GetName(),
@@ -30,7 +44,7 @@ func (m *ModulePredicate) Delete(event event.DeleteEvent) bool {
 	if obj == nil {
 		return false
 	}
-	if _, ok := obj.(*v1alpha1.Module); !ok {
+	if _, ok := obj.(*charlescdv1alpha1.Module); !ok {
 		return false
 	}
 	log.WithValues("name", obj.GetName(),
@@ -45,11 +59,11 @@ func (m *ModulePredicate) Update(event event.UpdateEvent) bool {
 	if objOld == nil || objNew == nil {
 		return false
 	}
-	moduleOld, ok := objOld.(*v1alpha1.Module)
+	moduleOld, ok := objOld.(*charlescdv1alpha1.Module)
 	if !ok {
 		return false
 	}
-	moduleNew, ok := objNew.(*v1alpha1.Module)
+	moduleNew, ok := objNew.(*charlescdv1alpha1.Module)
 	if !ok {
 		return false
 	}
@@ -57,8 +71,8 @@ func (m *ModulePredicate) Update(event event.UpdateEvent) bool {
 		"namespace", objNew.GetNamespace(),
 		"resourceVersion", objNew.GetResourceVersion(),
 		"diff", diff(
-			&v1alpha1.Module{Spec: moduleOld.Spec, Status: moduleOld.Status},
-			&v1alpha1.Module{Spec: moduleNew.Spec, Status: moduleNew.Status})).
+			&charlescdv1alpha1.Module{Spec: moduleOld.Spec, Status: moduleOld.Status},
+			&charlescdv1alpha1.Module{Spec: moduleNew.Spec, Status: moduleNew.Status})).
 		Info("Module updated")
 	return true
 }
@@ -68,7 +82,7 @@ func (m *ModulePredicate) Generic(event event.GenericEvent) bool {
 	if obj == nil {
 		return false
 	}
-	if _, ok := obj.(*v1alpha1.Module); !ok {
+	if _, ok := obj.(*charlescdv1alpha1.Module); !ok {
 		return false
 	}
 	return true
