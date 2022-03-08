@@ -25,7 +25,7 @@ import (
 	mf "github.com/manifestival/manifestival"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/tiagoangelozup/charles-alpha/internal/tracing"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 //go:embed manifests.yaml

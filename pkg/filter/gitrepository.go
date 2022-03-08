@@ -17,7 +17,7 @@ package filter
 import (
 	mf "github.com/manifestival/manifestival"
 
-	charlescdv1alpha1 "github.com/tiagoangelozup/charles-alpha/api/v1alpha1"
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 )
 
 type GitRepository struct{}
