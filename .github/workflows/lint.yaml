@@ -14,7 +14,7 @@
   # limitations under the License.
 #
 
-name: Build
+name: Lint
 
 on:
   push:
@@ -25,7 +25,7 @@ on:
 permissions: read-all
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Run actions checkout
@@ -36,18 +36,7 @@ jobs:
         with:
           go-version: "^1.17.8"
 
-      - name: Cache
-        uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #v2.1.7
+      - name: Code analysis
+        uses: golangci/golangci-lint-action@b517f99ae23d86ecc4c0dec08dcf48d2336abc29 #v3.1.0
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Caching Go dependencies
-        run: go mod download
-
-      - name: Building Go binary
-        run: go build -o bin/manager main.go
+          version: v1.44
