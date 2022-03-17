@@ -15,12 +15,25 @@
 package client
 
 import (
-	"github.com/google/wire"
+	"context"
+	"fmt"
+	"github.com/hashicorp/go-getter"
+	"os"
 )
 
-var Providers = wire.NewSet(
-	NewGitRepository,
-	NewHelm,
-	NewModule,
-	NewManifest,
-)
+type Manifest struct{}
+
+func NewManifest(manifests ManifestsReader) *Manifest {
+	return &Manifest{}
+}
+
+func (h *Manifest) DownloadFromSource(ctx context.Context, source string) (string, error) {
+	destination, err := os.MkdirTemp(os.TempDir(), "manifests")
+	if err != nil {
+		return "", fmt.Errorf("error creating temp dir %w", err)
+	}
+	if err := getter.GetAny(destination, source); err != nil {
+		return "", fmt.Errorf("error downloading manifests  %w", err)
+	}
+	return destination, nil
+}

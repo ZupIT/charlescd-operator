@@ -18,9 +18,7 @@ import (
 	"context"
 	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
-	"github.com/hashicorp/go-getter"
 	mf "github.com/manifestival/manifestival"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,16 +31,17 @@ const manifestError = "ManifestLoadError"
 
 type (
 	ManifestClient interface {
-		Load(ctx context.Context, releaseName, source, path string, values *apiextensionsv1.JSON) (mf.Manifest, error)
+		DownloadFromSource(ctx context.Context, source string) (string, error)
 	}
 	ManifestValidation struct {
 		reconciler.Funcs
-		status StatusWriter
+		status         StatusWriter
+		manifestClient ManifestClient
 	}
 )
 
-func NewManifestValidation(status StatusWriter) *ManifestValidation {
-	return &ManifestValidation{status: status}
+func NewManifestValidation(status StatusWriter, manifestClient ManifestClient) *ManifestValidation {
+	return &ManifestValidation{status: status, manifestClient: manifestClient}
 }
 
 func (h *ManifestValidation) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
@@ -55,7 +54,7 @@ func (h *ManifestValidation) Reconcile(ctx context.Context, obj client.Object) (
 
 func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
 	// check if this handler should act
-	if module.Status.Source == nil {
+	if module.Status.Source == nil || module.Status.Source.Path == "" {
 		return h.Next(ctx, module)
 	}
 
@@ -65,17 +64,16 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	log := logr.FromContextOrDiscard(ctx)
 	log.Info("Starting manifest validation reconcile")
 	// Loading pure manifests
-	dst, err := os.MkdirTemp(os.TempDir(), "manifests")
 
-	err = getter.GetAny(dst, module.Status.Source.Path)
+	dst, err := h.manifestClient.DownloadFromSource(ctx, module.Status.Source.Path)
+	defer os.RemoveAll(dst)
 	if err != nil {
-		log.Error(err, "Error loading manifests from source")
+		log.Error(err, "Error downloading manifests from source")
 		if module.SetSourceInvalid(manifestError, err.Error()) {
 			return h.status.UpdateModuleStatus(ctx, module)
 		}
 		return h.Next(ctx, module)
 	}
-	defer os.RemoveAll(dst)
 	manifests, err := mf.NewManifest(dst)
 	if err != nil {
 		log.Error(err, "Error loading manifests from source")
