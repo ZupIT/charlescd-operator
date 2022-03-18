@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/hashicorp/go-getter"
 )
@@ -28,13 +29,16 @@ func NewManifest(manifests ManifestsReader) *Manifest {
 	return &Manifest{}
 }
 
-func (h *Manifest) DownloadFromSource(ctx context.Context, source string) (string, error) {
+func (h *Manifest) DownloadFromSource(ctx context.Context, source, path string) (string, error) {
 	destination, err := os.MkdirTemp(os.TempDir(), "manifests")
 	if err != nil {
 		return "", fmt.Errorf("error creating temp dir %w", err)
 	}
 	if err := getter.GetAny(destination, source); err != nil {
 		return "", fmt.Errorf("error downloading manifests  %w", err)
+	}
+	if path != "" {
+		return filepath.Join(destination, path), nil
 	}
 	return destination, nil
 }

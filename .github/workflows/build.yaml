@@ -51,3 +51,6 @@ jobs:
 
       - name: Building Go binary
         run: go build -o bin/manager main.go
+
+      - name: Run Tests
+        run: go test -v ./test/module

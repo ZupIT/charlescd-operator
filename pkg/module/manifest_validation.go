@@ -29,11 +29,14 @@ import (
 	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
-const manifestError = "ManifestLoadError"
+const (
+	manifestError              = "ManifestLoadError"
+	SuccessManifestLoadMessage = "Manifests were successfully loaded"
+)
 
 type (
 	ManifestClient interface {
-		DownloadFromSource(ctx context.Context, source string) (string, error)
+		DownloadFromSource(ctx context.Context, source string, path string) (string, error)
 	}
 	ManifestValidation struct {
 		reconciler.Funcs
@@ -67,7 +70,11 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	log.Info("Starting manifest validation reconcile")
 	// Loading pure manifests
 
-	dst, err := h.manifestClient.DownloadFromSource(ctx, module.Status.Source.Path)
+	dst, err := h.manifestClient.DownloadFromSource(
+		ctx,
+		module.Status.Source.Path,
+		module.Spec.Manifests.GitRepository.Path,
+	)
 	defer os.RemoveAll(dst)
 	if err != nil {
 		log.Error(err, "Error downloading manifests from source")
@@ -76,6 +83,7 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 		}
 		return h.Next(ctx, module)
 	}
+
 	manifests, err := mf.NewManifest(dst)
 	if err != nil {
 		log.Error(err, "Error loading manifests from source")
@@ -86,10 +94,9 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	}
 
 	// update status to success
-	if module.SetSourceValid() {
+	if module.SetSourceValid(SuccessManifestLoadMessage) {
 		return h.status.UpdateModuleStatus(ctx, module)
 	}
 
-	log.WithValues("manifests", manifests.Resources()).Info("manifests is valid")
 	return h.Next(contextWithResources(ctx, manifests.Resources()), module)
 }

@@ -13,20 +13,20 @@ type ManifestClient struct {
 	mock.Mock
 }
 
-// DownloadFromSource provides a mock function with given fields: ctx, source
-func (_m *ManifestClient) DownloadFromSource(ctx context.Context, source string) (string, error) {
-	ret := _m.Called(ctx, source)
+// DownloadFromSource provides a mock function with given fields: ctx, source, path
+func (_m *ManifestClient) DownloadFromSource(ctx context.Context, source string, path string) (string, error) {
+	ret := _m.Called(ctx, source, path)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, source)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = rf(ctx, source, path)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, source)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, source, path)
 	} else {
 		r1 = ret.Error(1)
 	}
