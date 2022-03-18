@@ -21,17 +21,17 @@ import (
 )
 
 // resourcesContextKey is how we find []unstructured.Unstructured in a context.Context.
-type resourcesContextKey struct{}
+type ResourcesContextKey struct{}
 
 func contextWithResources(ctx context.Context, resources []unstructured.Unstructured) context.Context {
-	return context.WithValue(ctx, resourcesContextKey{}, resources)
+	return context.WithValue(ctx, ResourcesContextKey{}, resources)
 }
 
 func resourcesFromContext(ctx context.Context) []unstructured.Unstructured {
 	if ctx == nil {
 		return []unstructured.Unstructured{}
 	}
-	if v, ok := ctx.Value(resourcesContextKey{}).([]unstructured.Unstructured); ok {
+	if v, ok := ctx.Value(ResourcesContextKey{}).([]unstructured.Unstructured); ok {
 		return v
 	}
 	return []unstructured.Unstructured{}

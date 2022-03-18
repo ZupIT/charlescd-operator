@@ -61,6 +61,17 @@ func (s *Manifests) FromString(ctx context.Context, manifests string) (mf.Manife
 	return m, nil
 }
 
+func (s *Manifests) FromPath(ctx context.Context, path string) (mf.Manifest, error) {
+	span := tracing.SpanFromContext(ctx)
+	log := logr.FromContextOrDiscard(ctx).V(1)
+
+	m, err := mf.ManifestFrom(mf.Recursive(path), mf.UseClient(s.Client), mf.UseLogger(log))
+	if err != nil {
+		return mf.Manifest{}, span.Error(fmt.Errorf("failed to read manifests from path: %w", err))
+	}
+	return m, nil
+}
+
 func (s *Manifests) FromUnstructured(ctx context.Context, manifests []unstructured.Unstructured) (mf.Manifest, error) {
 	span := tracing.SpanFromContext(ctx)
 	log := logr.FromContextOrDiscard(ctx).V(1)

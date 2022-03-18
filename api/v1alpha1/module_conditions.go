@@ -33,13 +33,13 @@ func (in *Module) SetSourceReady(path string) bool {
 	return updated(old, in)
 }
 
-func (in *Module) SetSourceValid() bool {
+func (in *Module) SetSourceValid(message string) bool {
 	old := in.DeepCopy()
 	meta.SetStatusCondition(&in.Status.Conditions, metav1.Condition{
 		Type:    SourceValid,
 		Status:  metav1.ConditionTrue,
 		Reason:  "Validated",
-		Message: "Helm chart templates were successfully rendered",
+		Message: message,
 	})
 	in.updatePhase()
 	return updated(old, in)
