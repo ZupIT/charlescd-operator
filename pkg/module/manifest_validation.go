@@ -16,10 +16,11 @@ package module
 
 import (
 	"context"
+
 	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
-	"os"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -27,11 +28,14 @@ import (
 	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
-const manifestError = "ManifestLoadError"
+const (
+	manifestError              = "ManifestLoadError"
+	SuccessManifestLoadMessage = "Manifests were successfully loaded"
+)
 
 type (
 	ManifestClient interface {
-		DownloadFromSource(ctx context.Context, source string) (string, error)
+		LoadFromSource(ctx context.Context, source, path string) (mf.Manifest, error)
 	}
 	ManifestValidation struct {
 		reconciler.Funcs
@@ -65,16 +69,11 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	log.Info("Starting manifest validation reconcile")
 	// Loading pure manifests
 
-	dst, err := h.manifestClient.DownloadFromSource(ctx, module.Status.Source.Path)
-	defer os.RemoveAll(dst)
-	if err != nil {
-		log.Error(err, "Error downloading manifests from source")
-		if module.SetSourceInvalid(manifestError, err.Error()) {
-			return h.status.UpdateModuleStatus(ctx, module)
-		}
-		return h.Next(ctx, module)
-	}
-	manifests, err := mf.NewManifest(dst)
+	manifests, err := h.manifestClient.LoadFromSource(
+		ctx,
+		module.Status.Source.Path,
+		module.Spec.Manifests.GitRepository.Path,
+	)
 	if err != nil {
 		log.Error(err, "Error loading manifests from source")
 		if module.SetSourceInvalid(manifestError, err.Error()) {
@@ -84,10 +83,9 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	}
 
 	// update status to success
-	if module.SetSourceValid() {
+	if module.SetSourceValid(SuccessManifestLoadMessage) {
 		return h.status.UpdateModuleStatus(ctx, module)
 	}
 
-	log.WithValues("manifests", manifests.Resources()).Info("manifests is valid")
 	return h.Next(contextWithResources(ctx, manifests.Resources()), module)
 }

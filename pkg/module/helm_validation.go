@@ -28,7 +28,10 @@ import (
 	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
-const renderError = "RenderError"
+const (
+	renderError          = "RenderError"
+	successRenderMessage = "Helm chart templates were successfully rendered"
+)
 
 type (
 	HelmClient interface {
@@ -81,7 +84,7 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *charlescdv1alpha
 	}
 
 	// update status to success
-	if module.SetSourceValid() {
+	if module.SetSourceValid(successRenderMessage) {
 		return h.status.UpdateModuleStatus(ctx, module)
 	}
 
