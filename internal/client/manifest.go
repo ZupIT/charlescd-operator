@@ -17,8 +17,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-getter"
 	"os"
+
+	"github.com/hashicorp/go-getter"
 )
 
 type Manifest struct{}
