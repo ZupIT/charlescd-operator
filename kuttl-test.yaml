@@ -1,0 +1,12 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindNodeCache: true
+kindContext: charlescd
+reportFormat: JSON
+testDirs:
+  - "./test/integration/"
+commands:
+  - script: make install deploy
+kindContainers:
+  - charlescd.io/charlescd-operator:0.0.1

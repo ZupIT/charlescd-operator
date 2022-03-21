@@ -115,6 +115,9 @@ copyright: addlicense ## Ensures source code files have copyright license header
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+e2e-test: kuttl
+	$(KUTTL) test
+
 ##@ Build
 
 build: generate inject copyright fmt vet ## Build manager binary.
@@ -151,7 +154,7 @@ controller-gen: ## Download controller-gen locally if necessary.
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.2)
 
 WIRE = $(shell pwd)/bin/wire
 wire: ## Download wire locally if necessary.
@@ -160,6 +163,10 @@ wire: ## Download wire locally if necessary.
 ADDLICENSE = $(shell pwd)/bin/addlicense
 addlicense: ## Download addlicense locally if necessary.
 	$(call go-get-tool,$(ADDLICENSE),github.com/google/addlicense@v1.0.0)
+
+KUTTL = $(shell pwd)/bin/kubectl-kuttl
+kuttl: ## Download kuttl locally if necessary.
+	$(call go-get-tool,$(KUTTL),github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.11.1)
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
