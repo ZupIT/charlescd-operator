@@ -1,0 +1,17 @@
+apiVersion: deploy.charlescd.io/v1alpha1
+kind: Module
+metadata:
+  name: charlescd
+status:
+  components:
+    - name: envoy-proxy
+    - name: charlescd-ingress-nginx-controller
+    - name: charlescd-butler
+    - name: charlescd-circle-matcher
+    - name: charlescd-compass
+    - name: charlescd-gate
+    - name: charlescd-hermes
+    - name: charlescd-moove
+    - name: charlescd-ui
+    - name: charlescd-villager
+  phase: Ready
