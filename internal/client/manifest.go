@@ -21,24 +21,28 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-getter"
+	mf "github.com/manifestival/manifestival"
 )
 
-type Manifest struct{}
-
-func NewManifest(manifests ManifestsReader) *Manifest {
-	return &Manifest{}
+type Manifest struct {
+	reader ManifestsReader
 }
 
-func (h *Manifest) DownloadFromSource(ctx context.Context, source, path string) (string, error) {
+func NewManifest(reader ManifestsReader) *Manifest {
+	return &Manifest{reader}
+}
+
+func (h *Manifest) LoadFromSource(ctx context.Context, source, path string) (mf.Manifest, error) {
 	destination, err := os.MkdirTemp(os.TempDir(), "manifests")
 	if err != nil {
-		return "", fmt.Errorf("error creating temp dir %w", err)
+		return mf.Manifest{}, fmt.Errorf("error creating temp dir %w", err)
 	}
 	if err := getter.GetAny(destination, source); err != nil {
-		return "", fmt.Errorf("error downloading manifests  %w", err)
+		return mf.Manifest{}, fmt.Errorf("error downloading manifests  %w", err)
 	}
+	defer os.RemoveAll(destination)
 	if path != "" {
-		return filepath.Join(destination, path), nil
+		return h.reader.FromPath(ctx, filepath.Join(destination, path))
 	}
-	return destination, nil
+	return h.reader.FromPath(ctx, destination)
 }

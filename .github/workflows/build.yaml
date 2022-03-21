@@ -53,4 +53,4 @@ jobs:
         run: go build -o bin/manager main.go
 
       - name: Run Tests
-        run: go test -v ./test/module
+        run: go test ./pkg/module/ ./internal/client -v

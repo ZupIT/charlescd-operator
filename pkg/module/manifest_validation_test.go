@@ -20,9 +20,11 @@ import (
 	"os"
 	"path/filepath"
 
-	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 	"github.com/ZupIT/charlescd-operator/pkg/module"
-	"github.com/ZupIT/charlescd-operator/test/module/mocks"
+	"github.com/ZupIT/charlescd-operator/pkg/module/mocks"
+	mf "github.com/manifestival/manifestival"
+
+	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 	"github.com/angelokurtis/reconciler"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -34,7 +36,7 @@ import (
 
 var manifestLocation = filepath.Join(os.TempDir(), "deployment.yaml")
 
-var _ = Describe("Module", func() {
+var _ = Describe("Manifest Validation Test", func() {
 	var ctx context.Context
 	var statusWriterMock *mocks.StatusWriter
 	var manifestClientMock *mocks.ManifestClient
@@ -47,6 +49,7 @@ var _ = Describe("Module", func() {
 		manifestValidation = module.NewManifestValidation(statusWriterMock, manifestClientMock)
 		reconciler.Chain(manifestValidation)
 	})
+
 	Context("when reconciling  pure manifests", func() {
 		It("should update status successfully when source are valid", func() {
 			expectedCondition := metav1.Condition{
@@ -55,13 +58,11 @@ var _ = Describe("Module", func() {
 				Reason:  "Validated",
 				Message: module.SuccessManifestLoadMessage,
 			}
-			storeManifestInFSys()
 			mod := setupModule()
-
 			manifestClientMock.On(
-				"DownloadFromSource",
+				"LoadFromSource",
 				mock.Anything, mod.Status.Source.Path, mod.Spec.Manifests.GitRepository.Path,
-			).Return(manifestLocation, nil)
+			).Return(mf.Manifest{}, nil)
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
 
 			_, err := manifestValidation.Reconcile(ctx, mod)
@@ -77,10 +78,11 @@ var _ = Describe("Module", func() {
 			downloadError := errors.New("failed to download from source")
 			mod := setupModule()
 
-			manifestClientMock.On("DownloadFromSource", mock.Anything,
+			manifestClientMock.On("LoadFromSource", mock.Anything,
 				mod.Status.Source.Path,
 				mod.Spec.Manifests.GitRepository.Path,
-			).Return("", downloadError)
+			).Return(mf.Manifest{}, downloadError)
+
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
 
 			_, err := manifestValidation.Reconcile(ctx, mod)
@@ -89,25 +91,6 @@ var _ = Describe("Module", func() {
 			Expect(mod.Status.Conditions[1].Type).To(Equal(charlescdv1alpha1.SourceValid))
 			Expect(mod.Status.Conditions[1].Status).To(Equal(metav1.ConditionFalse))
 			Expect(mod.Status.Conditions[1].Message).To(Equal(downloadError.Error()))
-		})
-
-		It("should return error when fails to load manifests", func() {
-			mod := setupModule()
-
-			manifestClientMock.On(
-				"DownloadFromSource",
-				mock.Anything,
-				mod.Status.Source.Path,
-				mod.Spec.Manifests.GitRepository.Path,
-			).Return("./fake-path/deployment.yaml", nil)
-			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
-
-			_, err := manifestValidation.Reconcile(ctx, mod)
-
-			Expect(err).To(BeNil())
-			Expect(mod.Status.Conditions[1].Type).To(Equal(charlescdv1alpha1.SourceValid))
-			Expect(mod.Status.Conditions[1].Status).To(Equal(metav1.ConditionFalse))
-			Expect(mod.Status.Conditions[1].Message).To(Equal("stat ./fake-path/deployment.yaml: no such file or directory"))
 		})
 	})
 })
@@ -118,61 +101,4 @@ func setupModule() *charlescdv1alpha1.Module {
 	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
 	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
 	return module
-}
-
-func storeManifestInFSys() {
-	fileData := `
-
-# Source: event-receiver/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: event-receiver
-  labels:
-    helm.sh/chart: event-receiver-0.1.0
-    app.kubernetes.io/name: event-receiver
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "1.16.0"
-    app.kubernetes.io/managed-by: Helm
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: event-receiver
-      app.kubernetes.io/instance: RELEASE-NAME
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: event-receiver
-        app.kubernetes.io/instance: RELEASE-NAME
-    spec:
-      serviceAccountName: event-receiver
-      securityContext:
-        {}
-      containers:
-        - name: event-receiver
-          securityContext:
-            {}
-          image: "thallesf/event-receiver:1.0"
-          imagePullPolicy: Always
-          ports:
-            - name: http
-              containerPort: 3000
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-          resources:
-            {}`
-	f, err := os.Create(manifestLocation)
-	Expect(err).To(BeNil())
-	_, err = f.WriteString(fileData)
-	Expect(err).To(BeNil())
-	defer f.Close()
 }

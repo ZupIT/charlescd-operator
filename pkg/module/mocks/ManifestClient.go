@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	manifestival "github.com/manifestival/manifestival"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,15 +14,15 @@ type ManifestClient struct {
 	mock.Mock
 }
 
-// DownloadFromSource provides a mock function with given fields: ctx, source, path
-func (_m *ManifestClient) DownloadFromSource(ctx context.Context, source string, path string) (string, error) {
+// LoadFromSource provides a mock function with given fields: ctx, source, path
+func (_m *ManifestClient) LoadFromSource(ctx context.Context, source string, path string) (manifestival.Manifest, error) {
 	ret := _m.Called(ctx, source, path)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+	var r0 manifestival.Manifest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) manifestival.Manifest); ok {
 		r0 = rf(ctx, source, path)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(manifestival.Manifest)
 	}
 
 	var r1 error
