@@ -115,7 +115,9 @@ copyright: addlicense ## Ensures source code files have copyright license header
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-e2e-test: kuttl
+e2e-test: kuttl docker-build
+	sed -i 's,\- command\: make deploy.*,\- command\: make deploy IMG\=${IMG},g' kuttl-test.yaml
+	sed -i 's,kindContainers\:.*,kindContainers\: [ "${IMG}" ],g' kuttl-test.yaml
 	$(KUTTL) test
 
 ##@ Build
