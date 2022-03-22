@@ -1,11 +1,11 @@
 name: Integration tests
 
 on:
-  repository_dispatch:
-    types: [ charlescd-testing ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  docker-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -43,9 +43,58 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  install-binaries:
+    runs-on: ubuntu-latest
+    outputs:
+      KUBECTL_VERSION: ${{ steps.vars.outputs.KUBECTL_VERSION }}
+      KUSTOMIZE_VERSION: ${{ steps.vars.outputs.KUSTOMIZE_VERSION }}
+      KUTTL_VERSION: ${{ steps.vars.outputs.KUTTL_VERSION }}
+    steps:
+      - name: Set up versions
+        id: vars
+        uses: actions/github-script@v6.0.0
+        with:
+          script: |
+            const kubectl = '1.23.5';
+            const kustomize = '4.5.2';
+            const kuttl = '0.11.1';
+            core.setOutput('KUBECTL_VERSION', kubectl)
+            core.setOutput('KUSTOMIZE_VERSION', kustomize)
+            core.setOutput('KUTTL_VERSION', kuttl)
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        id: bin-cache
+        uses: actions/cache@v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Install kubectl
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kubectl https://dl.k8s.io/release/v${{ steps.vars.outputs.KUBECTL_VERSION }}/bin/linux/amd64/kubectl
+          chmod +x ./bin/kubectl
+
+      - name: Install Kustomize
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}/kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz
+          tar zxvf kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz -C ./bin
+          chmod +x ./bin/kustomize
+
+      - name: Install KUTTL
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kuttl https://github.com/kudobuilder/kuttl/releases/download/v${{ steps.vars.outputs.KUTTL_VERSION }}/kubectl-kuttl_${{ steps.vars.outputs.KUTTL_VERSION }}_linux_x86_64
+          chmod +x ./bin/kuttl
+
   test:
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ docker-build, install-binaries ]
     strategy:
       matrix:
         kubernetes:
@@ -81,10 +130,29 @@ jobs:
       - name: Pull Docker image
         run: docker pull ${{ steps.vars.outputs.IMAGE_TAG }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - name: Set up versions
+        uses: actions/github-script@v6.0.0
         with:
-          go-version: 1.17.8
+          script: |
+            const kubectl = '${{ needs.install-binaries.outputs.KUBECTL_VERSION }}';
+            const kustomize = '${{ needs.install-binaries.outputs.KUSTOMIZE_VERSION }}';
+            const kuttl = '${{ needs.install-binaries.outputs.KUTTL_VERSION }}';
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        uses: actions/cache@v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Add binaries
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Build resources
+        run: |
+          kustomize build config/crd > ./crd.yaml
+          (cd config/manager ; kustomize edit set image controller=${{ steps.vars.outputs.IMAGE_TAG }})
+          kustomize build config/default > ./manifest.yaml
 
       - name: KUTTL config
         run: |
@@ -102,16 +170,20 @@ jobs:
             kindContext: charlescd
             startKIND: true
             reportFormat: JSON
+            crdDir: ./crd.yaml
+            manifestDirs:
+              - ./manifest.yaml
+            commands:
+              - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-operator
+              - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-flux-source-controller
             testDirs:
               - ./test/integration/
-            commands:
-              - script: make install deploy IMG=${{ steps.vars.outputs.IMAGE_TAG }}
             kindContainers:
               - ${{ steps.vars.outputs.IMAGE_TAG }}
           EOF
 
       - name: Runs integration tests
-        run: make e2e-test
+        run: kuttl test
 
       - name: Upload integration test results
         if: always()
