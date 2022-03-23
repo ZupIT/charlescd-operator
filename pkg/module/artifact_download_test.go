@@ -2,6 +2,8 @@ package module_test
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 	"github.com/ZupIT/charlescd-operator/pkg/module/mocks"
 	"github.com/angelokurtis/reconciler"
@@ -39,10 +41,6 @@ var _ = Describe("ArtifactDownload", func() {
 	var artifactDownload *module.ArtifactDownload
 
 	BeforeEach(func() {
-		gock.New("https://example.com").
-			Get("/manifests").
-			Reply(200).
-			BodyString(getArtifactData())
 		ctx = context.TODO()
 		statusWriterMock = new(mocks.StatusWriter)
 		gitRepositoryGetter = new(mocks.GitRepositoryGetter)
@@ -55,7 +53,10 @@ var _ = Describe("ArtifactDownload", func() {
 
 	Context("when reconciling for artifact download", func() {
 		It("should update status successfully when source are valid", func() {
-
+			gock.New("https://example.com").
+				Get("/manifests").
+				Reply(200).
+				BodyString(getArtifactData())
 			expectedCondition := metav1.Condition{
 				Type:    charlescdv1alpha1.SourceReady,
 				Status:  metav1.ConditionTrue,
@@ -86,7 +87,6 @@ var _ = Describe("ArtifactDownload", func() {
 			expectedCondition := metav1.Condition{
 				Type:    charlescdv1alpha1.SourceReady,
 				Status:  metav1.ConditionFalse,
-				Reason:  "Downloaded",
 				Message: repositoryNotReady.Status.Conditions[0].Message,
 			}
 			mod := setupModule()
@@ -106,13 +106,87 @@ var _ = Describe("ArtifactDownload", func() {
 			Expect(mod.Status.Conditions[0].Type).To(Equal(expectedCondition.Type))
 			Expect(mod.Status.Conditions[0].Message).To(Equal(expectedCondition.Message))
 		})
+
+		It("should update status successfully when url address is not valid", func() {
+
+			expectedCondition := metav1.Condition{
+				Type:    charlescdv1alpha1.SourceReady,
+				Status:  metav1.ConditionFalse,
+				Message: `parse "://user:abc{DEf1=ghi": missing protocol scheme`,
+				Reason:  "AddressResolutionError",
+			}
+			mod := setupModule()
+			gitRepositoryGetter.On(
+				"GetGitRepository",
+				mock.Anything, types.NamespacedName{
+					Namespace: mod.GetNamespace(),
+					Name:      mod.GetName(),
+				},
+			).Return(getGitRepositoryWithInvalidArtifact(), nil)
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(BeNil())
+			Expect(mod.Status.Conditions[0].Status).To(Equal(expectedCondition.Status))
+			Expect(mod.Status.Conditions[0].Type).To(Equal(expectedCondition.Type))
+			Expect(mod.Status.Conditions[0].Message).To(Equal(expectedCondition.Message))
+			Expect(mod.Status.Conditions[0].Reason).To(Equal(expectedCondition.Reason))
+		})
+
+		It("should update status successfully when fails to send the http request", func() {
+			requestError := errors.New("error sending request")
+			messageError := fmt.Errorf(`error downloading source artifact: Get "https://example.com/manifests": %w`, requestError)
+			gock.New("https://example.com").
+				Get("/manifests").
+				Reply(500).
+				SetError(requestError)
+			expectedCondition := metav1.Condition{
+				Type:    charlescdv1alpha1.SourceReady,
+				Status:  metav1.ConditionFalse,
+				Message: messageError.Error(),
+				Reason:  "DownloadError",
+			}
+			mod := newReadyModule()
+			gitRepositoryGetter.On(
+				"GetGitRepository",
+				mock.Anything, types.NamespacedName{
+					Namespace: mod.GetNamespace(),
+					Name:      mod.GetName(),
+				},
+			).Return(getGitRepository(), nil)
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(BeNil())
+			Expect(mod.Status.Conditions[0].Status).To(Equal(expectedCondition.Status))
+			Expect(mod.Status.Conditions[0].Type).To(Equal(expectedCondition.Type))
+			Expect(mod.Status.Conditions[0].Message).To(Equal(expectedCondition.Message))
+			Expect(mod.Status.Conditions[0].Reason).To(Equal(expectedCondition.Reason))
+		})
 	})
 })
+
+func newReadyModule() *charlescdv1alpha1.Module {
+	module := new(charlescdv1alpha1.Module)
+	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}}
+	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
+	return module
+}
 
 func getGitRepository() *v1beta1.GitRepository {
 	return &v1beta1.GitRepository{
 		Spec:   v1beta1.GitRepositorySpec{URL: manifestLocation},
 		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "https://example.com/manifests"}},
+	}
+}
+
+func getGitRepositoryWithInvalidArtifact() *v1beta1.GitRepository {
+	return &v1beta1.GitRepository{
+		Spec:   v1beta1.GitRepositorySpec{URL: manifestLocation},
+		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "://user:abc{DEf1=ghi"}},
 	}
 }
 func getArtifactData() string {
@@ -121,7 +195,7 @@ func getArtifactData() string {
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: event-receiver
+  name: quiz-app
   labels:
     helm.sh/chart: event-receiver-0.1.0
     app.kubernetes.io/name: event-receiver
@@ -145,10 +219,10 @@ spec:
       securityContext:
         {}
       containers:
-        - name: event-receiver
+        - name: quiz-app
           securityContext:
             {}
-          image: "thallesf/event-receiver:1.0"
+          image: "charlescd/quiz-app:1.0"
           imagePullPolicy: Always
           ports:
             - name: http
