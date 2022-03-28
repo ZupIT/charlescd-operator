@@ -15,7 +15,7 @@ testbin/*
 *.out
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-
+kubeconfig
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
@@ -23,3 +23,7 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# the KUbernetes Test TooL (KUTTL) generated files
+kind-logs-*/*
+kuttl-test.json
