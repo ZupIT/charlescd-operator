@@ -70,7 +70,7 @@ jobs:
         with:
           script: |
             const kubectl = '1.23.5';
-            const kustomize = '4.5.2';
+            const kustomize = '4.5.3';
             const kuttl = '0.11.1';
             core.setOutput('KUBECTL_VERSION', kubectl)
             core.setOutput('KUSTOMIZE_VERSION', kustomize)
