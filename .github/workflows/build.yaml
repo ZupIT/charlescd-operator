@@ -34,7 +34,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab #v3.0.0
         with:
-          go-version: "^1.17.8"
+          go-version: "~1.17"
 
       - name: Cache
         uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #v2.1.7

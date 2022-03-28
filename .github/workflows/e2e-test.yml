@@ -1,0 +1,211 @@
+# Copyright 2022 ZUP IT SERVICOS EM TECNOLOGIA E INOVACAO SA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Integration tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v3.0.0
+
+      - name: Set up Docker image tag
+        id: vars
+        run: echo "::set-output name=IMAGE_TAG::${{ secrets.ECR_PRIVATE_REPOSITORY }}:alpha-$(git rev-parse --short HEAD)"
+
+      - name: Set up AWS Credentials
+        uses: aws-actions/configure-aws-credentials@05b148adc31e091bafbaf404f745055d4d3bc9d2 #v1.6.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-duration-seconds: 900
+          role-session-name: ECRPush
+          role-skip-session-tagging: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480 # v1.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@94ab11c41e45d028884a99163086648e898eed25 # v1.6.0
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@aaf69d68aa3fb14c1d5a6be9ac61fe15b48453a2 # v1.3.3
+
+      - name: Build and push
+        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a # v2.10.0
+        with:
+          push: true
+          tags: ${{ steps.vars.outputs.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  install-binaries:
+    runs-on: ubuntu-latest
+    outputs:
+      KUBECTL_VERSION: ${{ steps.vars.outputs.KUBECTL_VERSION }}
+      KUSTOMIZE_VERSION: ${{ steps.vars.outputs.KUSTOMIZE_VERSION }}
+      KUTTL_VERSION: ${{ steps.vars.outputs.KUTTL_VERSION }}
+    steps:
+      - name: Set up versions
+        id: vars
+        uses: actions/github-script@9ac08808f993958e9de277fe43a64532a609130e # v6.0.0
+        with:
+          script: |
+            const kubectl = '1.23.5';
+            const kustomize = '4.5.3';
+            const kuttl = '0.11.1';
+            core.setOutput('KUBECTL_VERSION', kubectl)
+            core.setOutput('KUSTOMIZE_VERSION', kustomize)
+            core.setOutput('KUTTL_VERSION', kuttl)
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        id: bin-cache
+        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Install kubectl
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kubectl https://dl.k8s.io/release/v${{ steps.vars.outputs.KUBECTL_VERSION }}/bin/linux/amd64/kubectl
+          chmod +x ./bin/kubectl
+
+      - name: Install Kustomize
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}/kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz
+          tar zxvf kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz -C ./bin
+          chmod +x ./bin/kustomize
+
+      - name: Install KUTTL
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kuttl https://github.com/kudobuilder/kuttl/releases/download/v${{ steps.vars.outputs.KUTTL_VERSION }}/kubectl-kuttl_${{ steps.vars.outputs.KUTTL_VERSION }}_linux_x86_64
+          chmod +x ./bin/kuttl
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [ docker-build, install-binaries ]
+    strategy:
+      matrix:
+        kubernetes:
+          - "1.23.5"
+          - "1.22.7"
+          - "1.21.10"
+          - "1.20.15"
+          - "1.19.16"
+          - "1.18.20"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v3.0.0
+
+      - name: Set up Docker image tag
+        id: vars
+        run: |
+          echo "::set-output name=IMAGE_TAG::${{ secrets.ECR_PRIVATE_REPOSITORY }}:alpha-$(git rev-parse --short HEAD)"
+          echo "::set-output name=COMMIT_HASH::$(git rev-parse --short HEAD)"
+
+      - name: Set up AWS Credentials
+        uses: aws-actions/configure-aws-credentials@05b148adc31e091bafbaf404f745055d4d3bc9d2 #v1.6.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-duration-seconds: 900
+          role-session-name: ECRPush
+          role-skip-session-tagging: true
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@aaf69d68aa3fb14c1d5a6be9ac61fe15b48453a2 # v1.3.3
+
+      - name: Pull Docker image
+        run: docker pull ${{ steps.vars.outputs.IMAGE_TAG }}
+
+      - name: Set up versions
+        uses: actions/github-script@9ac08808f993958e9de277fe43a64532a609130e # v6.0.0
+        with:
+          script: |
+            const kubectl = '${{ needs.install-binaries.outputs.KUBECTL_VERSION }}';
+            const kustomize = '${{ needs.install-binaries.outputs.KUSTOMIZE_VERSION }}';
+            const kuttl = '${{ needs.install-binaries.outputs.KUTTL_VERSION }}';
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Add binaries
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Build resources
+        run: |
+          kustomize build config/crd > ./crd.yaml
+          (cd config/manager ; kustomize edit set image controller=${{ steps.vars.outputs.IMAGE_TAG }})
+          kustomize build config/default > ./manifest.yaml
+
+      - name: KUTTL config
+        run: |
+          cat << EOF > ./kind.yaml
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+            - role: control-plane
+              image: kindest/node:v${{ matrix.kubernetes }}
+          EOF
+          cat << EOF > ./kuttl-test.yaml
+            apiVersion: kuttl.dev/v1beta1
+            kind: TestSuite
+            kindConfig: ./kind.yaml
+            kindContext: charlescd
+            startKIND: true
+            reportFormat: JSON
+            crdDir: ./crd.yaml
+            manifestDirs:
+              - ./manifest.yaml
+            commands:
+              - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-operator
+              - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-flux-source-controller
+            testDirs:
+              - ./test/integration/
+            kindContainers:
+              - ${{ steps.vars.outputs.IMAGE_TAG }}
+          EOF
+
+      - name: Runs integration tests
+        run: kuttl test
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
+        with:
+          name: kuttl-test-${{ steps.vars.outputs.COMMIT_HASH }}-${{ matrix.kubernetes }}
+          path: |
+            kind-logs-*
+            kuttl-test.json
+          retention-days: 7
