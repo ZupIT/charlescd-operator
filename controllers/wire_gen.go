@@ -55,12 +55,15 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	helm := client.NewHelm(manifests)
 	helmValidation := module.NewHelmValidation(helm, clientModule)
 	checkComponents := module.NewCheckComponents(manifests, unstructuredConverter, clientModule)
+	manifest := client.NewManifest(manifests)
+	manifestValidation := module.NewManifestValidation(clientModule, manifest)
 	moduleHandler := &ModuleHandler{
-		Status:           status,
-		DesiredState:     desiredState,
-		ArtifactDownload: artifactDownload,
-		HelmValidation:   helmValidation,
-		CheckComponents:  checkComponents,
+		Status:             status,
+		DesiredState:       desiredState,
+		ArtifactDownload:   artifactDownload,
+		HelmValidation:     helmValidation,
+		CheckComponents:    checkComponents,
+		ManifestValidation: manifestValidation,
 	}
 	moduleReconciler := newModuleReconciler(moduleHandler, clientModule)
 	v := reconcilers(moduleReconciler)

@@ -32,6 +32,7 @@ import (
 type (
 	ManifestsReader interface {
 		FromString(ctx context.Context, manifests string) (mf.Manifest, error)
+		FromPath(ctx context.Context, path string) (mf.Manifest, error)
 	}
 	Helm struct{ manifests ManifestsReader }
 )

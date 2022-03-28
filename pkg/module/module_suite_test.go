@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package module_test
 
 import (
-	"github.com/google/wire"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-var Providers = wire.NewSet(
-	NewGitRepository,
-	NewHelm,
-	NewModule,
-	NewManifest,
-)
+func TestModule(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Module Suite")
+}

@@ -22,6 +22,7 @@ var Providers = wire.NewSet(
 	NewDesiredState,
 	NewHelmValidation,
 	NewStatus,
+	NewManifestValidation,
 	wire.Struct(new(Filters), "*"),
 	wire.Struct(new(Transformers), "*"),
 )
