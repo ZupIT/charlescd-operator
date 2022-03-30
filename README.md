@@ -19,6 +19,7 @@
 ### 6. [**Code of Conduct**](#code-of-conduct)
 ### 7. [**License**](#license)
 ### 8. [**Community**](#community)
+### 9. [**Security**](#security)
 
 
 # **About**
@@ -91,6 +92,8 @@ Feel free to reach out to us at:
 - [**GitHub Issues**](https://github.com/ZupIT/docs-charles/issues).
 - If you have any questions or ideas, let's chat in our [**Zup Open Source Forum**](https://forum.zup.com.br).
 
+## **Security**
+Check out our [**security**](SECURITY.md) policies.
 
 Thank you for evoluting CharlesCD!!!:heart::heart::heart:
 
