@@ -80,7 +80,10 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 				Image: container.Image,
 			})
 		}
-		components = append(components, component)
+		if !c.componentIsAlreadyPresent(components, component) {
+			components = append(components, component)
+		}
+
 	}
 
 	if total := len(components); total > 0 {
@@ -93,4 +96,13 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 		return c.status.UpdateModuleStatus(ctx, module)
 	}
 	return c.Next(ctx, module)
+}
+
+func (c *CheckComponents) componentIsAlreadyPresent(components []*charlescdv1alpha1.Component, component *charlescdv1alpha1.Component) bool {
+	for _, c := range components {
+		if c.Name == component.Name {
+			return true
+		}
+	}
+	return false
 }
