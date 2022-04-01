@@ -24,6 +24,6 @@ jobs:
   dco-gpg-validator:
     runs-on: ubuntu-latest
     steps:
-      - uses: ZupIT/zup-dco-validator@3835528a8d571e90fa9f0f93effccd6cbe6182c6 #v.1.1
+      - uses: ZupIT/zup-dco-validator@5298d1dd508cbf40c20aad1702af284cad23f301 #v.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
