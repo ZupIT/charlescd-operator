@@ -18,45 +18,14 @@ metadata:
   name: charlescd
 status:
   components:
-  - containers:
-    - image: envoyproxy/envoy-dev:latest
-      name: envoy-proxy
-    name: envoy-proxy
-  - containers:
-    - image: k8s.gcr.io/ingress-nginx/controller:v0.41.2@sha256:1f4f402b9c14f3ae92b11ada1dfe9893a88f0faeb0b2f4b903e2c67a0c3bf0de
-      name: controller
-    name: RELEASE-NAME-ingress-nginx-controller
-  - containers:
-    - image: zupcharles/charlescd-butler:1.0.0
-      name: charlescd-butler
-    name: charlescd-butler
-  - containers:
-    - image: zupcharles/charlescd-circle-matcher:1.0.0
-      name: charlescd-circle-matcher
-    name: charlescd-circle-matcher
-  - containers:
-    - image: zupcharles/charlescd-compass:1.0.0
-      name: charlescd-compass
-    name: charlescd-compass
-  - containers:
-    - image: zupcharles/charlescd-gate:1.0.0
-      name: charlescd-gate
-    name: charlescd-gate
-  - containers:
-    - image: zupcharles/charlescd-hermes:1.0.0
-      name: charlescd-hermes
-    name: charlescd-hermes
-  - containers:
-    - image: zupcharles/charlescd-moove:1.0.0
-      name: charlescd-moove
-    name: charlescd-moove
-  - containers:
-    - image: zupcharles/charlescd-ui:1.0.0
-      name: charlescd-ui
-    name: charlescd-ui
-  - containers:
-    - image: zupcharles/charlescd-villager:1.0.0
-      name: charlescd-villager
-    name: charlescd-villager
-
+    - name: envoy-proxy
+    - name: RELEASE-NAME-ingress-nginx-controller
+    - name: charlescd-butler
+    - name: charlescd-circle-matcher
+    - name: charlescd-compass
+    - name: charlescd-gate
+    - name: charlescd-hermes
+    - name: charlescd-moove
+    - name: charlescd-ui
+    - name: charlescd-villager
   phase: Ready
