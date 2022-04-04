@@ -35,7 +35,7 @@ const (
 
 type (
 	ManifestClient interface {
-		LoadFromSource(ctx context.Context, source, path string) (mf.Manifest, error)
+		LoadFromSource(ctx context.Context, source, path string, recursive bool) (mf.Manifest, error)
 	}
 	ManifestValidation struct {
 		reconciler.Funcs
@@ -73,6 +73,7 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 		ctx,
 		module.Status.Source.Path,
 		module.Spec.Manifests.GitRepository.Path,
+		module.Spec.Manifests.Recursive,
 	)
 	if err != nil {
 		log.Error(err, "Error loading manifests from source")
