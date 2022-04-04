@@ -18,6 +18,7 @@ metadata:
   name: charlescd
 spec:
   manifests:
+    recursive: false
     gitRepository:
       path: install
       ref:

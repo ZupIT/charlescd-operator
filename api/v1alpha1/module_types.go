@@ -35,7 +35,7 @@ type ModuleSpec struct {
 }
 
 type Manifests struct {
-	// +kubebuilder:default=false
+	// +kubebuilder:default=true
 	Recursive bool `json:"recursive,omitempty"`
 	// +kubebuilder:validation:Required
 	GitRepository GitRepository `json:"gitRepository"`

@@ -16,6 +16,8 @@ package module
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
@@ -27,6 +29,12 @@ import (
 
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
 	"github.com/ZupIT/charlescd-operator/internal/tracing"
+)
+
+var ErrorDuplicatedComponent = errors.New("component already present on module")
+
+const (
+	DuplicatedComponent = "DuplicatedComponent"
 )
 
 type (
@@ -79,11 +87,12 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 				Name:  container.Name,
 				Image: container.Image,
 			})
-		}
-		if !c.componentIsAlreadyPresent(components, component) {
+			if err := c.checkComponentIsAlreadyPresent(components, component); err != nil {
+				module.SetSourceInvalid(DuplicatedComponent, err.Error())
+				return c.status.UpdateModuleStatus(ctx, module)
+			}
 			components = append(components, component)
 		}
-
 	}
 
 	if total := len(components); total > 0 {
@@ -98,11 +107,11 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 	return c.Next(ctx, module)
 }
 
-func (c *CheckComponents) componentIsAlreadyPresent(components []*charlescdv1alpha1.Component, component *charlescdv1alpha1.Component) bool {
+func (c *CheckComponents) checkComponentIsAlreadyPresent(components []*charlescdv1alpha1.Component, component *charlescdv1alpha1.Component) error {
 	for _, c := range components {
 		if c.Name == component.Name {
-			return true
+			return fmt.Errorf("%s: %w", c.Name, ErrorDuplicatedComponent)
 		}
 	}
-	return false
+	return nil
 }

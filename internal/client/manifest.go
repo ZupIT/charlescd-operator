@@ -32,7 +32,7 @@ func NewManifest(reader ManifestsReader) *Manifest {
 	return &Manifest{reader}
 }
 
-func (h *Manifest) LoadFromSource(ctx context.Context, source, path string) (mf.Manifest, error) {
+func (h *Manifest) LoadFromSource(ctx context.Context, source, path string, recursive bool) (mf.Manifest, error) {
 	destination, err := os.MkdirTemp(os.TempDir(), "manifests")
 	if err != nil {
 		return mf.Manifest{}, fmt.Errorf("error creating temp dir %w", err)
@@ -42,7 +42,7 @@ func (h *Manifest) LoadFromSource(ctx context.Context, source, path string) (mf.
 	}
 	defer os.RemoveAll(destination)
 	if path != "" {
-		return h.reader.FromPath(ctx, filepath.Join(destination, path))
+		return h.reader.FromPath(ctx, filepath.Join(destination, path), recursive)
 	}
-	return h.reader.FromPath(ctx, destination)
+	return h.reader.FromPath(ctx, destination, recursive)
 }

@@ -16,18 +16,18 @@ package client_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+
 	"github.com/ZupIT/charlescd-operator/internal/client"
 	"github.com/ZupIT/charlescd-operator/internal/resources"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os"
-	"path/filepath"
 )
 
 var manifestLocation = filepath.Join(os.TempDir(), "deployment.yaml")
 
 var _ = Describe("Manifest", Ordered, func() {
-
 	BeforeAll(func() {
 		storeManifestInFSys()
 	})
@@ -38,7 +38,7 @@ var _ = Describe("Manifest", Ordered, func() {
 
 			manifestClient := client.NewManifest(manifests)
 
-			mf, err := manifestClient.LoadFromSource(context.TODO(), manifestLocation, "")
+			mf, err := manifestClient.LoadFromSource(context.TODO(), manifestLocation, "", false)
 
 			Expect(err).To(BeNil())
 			loadedManifests := mf.Resources()
@@ -52,7 +52,6 @@ var _ = Describe("Manifest", Ordered, func() {
 		err := os.RemoveAll(manifestLocation)
 		Expect(err).To(BeNil())
 	})
-
 })
 
 func storeManifestInFSys() {

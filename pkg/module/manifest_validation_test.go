@@ -62,6 +62,7 @@ var _ = Describe("Manifest Validation Test", func() {
 			manifestClientMock.On(
 				"LoadFromSource",
 				mock.Anything, mod.Status.Source.Path, mod.Spec.Manifests.GitRepository.Path,
+				false,
 			).Return(mf.Manifest{}, nil)
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
 
@@ -81,6 +82,7 @@ var _ = Describe("Manifest Validation Test", func() {
 			manifestClientMock.On("LoadFromSource", mock.Anything,
 				mod.Status.Source.Path,
 				mod.Spec.Manifests.GitRepository.Path,
+				false,
 			).Return(mf.Manifest{}, downloadError)
 
 			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
