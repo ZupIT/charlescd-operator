@@ -14,20 +14,20 @@ type ManifestClient struct {
 	mock.Mock
 }
 
-// LoadFromSource provides a mock function with given fields: ctx, source, path
-func (_m *ManifestClient) LoadFromSource(ctx context.Context, source string, path string) (manifestival.Manifest, error) {
-	ret := _m.Called(ctx, source, path)
+// LoadFromSource provides a mock function with given fields: ctx, source, path, recursive
+func (_m *ManifestClient) LoadFromSource(ctx context.Context, source string, path string, recursive bool) (manifestival.Manifest, error) {
+	ret := _m.Called(ctx, source, path, recursive)
 
 	var r0 manifestival.Manifest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) manifestival.Manifest); ok {
-		r0 = rf(ctx, source, path)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) manifestival.Manifest); ok {
+		r0 = rf(ctx, source, path, recursive)
 	} else {
 		r0 = ret.Get(0).(manifestival.Manifest)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, source, path)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, bool) error); ok {
+		r1 = rf(ctx, source, path, recursive)
 	} else {
 		r1 = ret.Error(1)
 	}
