@@ -4,7 +4,7 @@
       "config:base"
     ],
     "schedule": [
-      "before 3am on the first day of the month"
+      "every 3 months on the first day of the month"
     ],
   
     "commitBody": "Signed-off-by: Renovate Bot <bot@renovateapp.com>"
