@@ -30,6 +30,14 @@ var _ = Describe("ModulePredicate", func() {
 		})
 	})
 
+	Context(" when event is about a nil object created", func() {
+		It("should return false", func() {
+			event := event.CreateEvent{Object: nil}
+			created := modulePredicate.Create(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
 	Context(" when event is  about  a module resource deleted", func() {
 		It("should return false", func() {
 			event := event.DeleteEvent{Object: newValidModule()}
@@ -41,6 +49,14 @@ var _ = Describe("ModulePredicate", func() {
 	Context(" when event is  not about  a module resource deleted", func() {
 		It("should return false", func() {
 			event := event.DeleteEvent{Object: new(v1beta1.GitRepository)}
+			created := modulePredicate.Delete(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when event is about a nil resource deleted", func() {
+		It("should return false", func() {
+			event := event.DeleteEvent{Object: nil}
 			created := modulePredicate.Delete(event)
 			Expect(created).To(Equal(false))
 		})
@@ -62,6 +78,22 @@ var _ = Describe("ModulePredicate", func() {
 		})
 	})
 
+	Context(" when an update event has a nil resource", func() {
+		It("should return false", func() {
+			event := event.UpdateEvent{ObjectNew: nil, ObjectOld: new(v1beta1.GitRepository)}
+			created := modulePredicate.Update(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when an update event has a invalid new resource", func() {
+		It("should return false", func() {
+			event := event.UpdateEvent{ObjectNew: new(v1beta1.GitRepository), ObjectOld: newValidModule()}
+			created := modulePredicate.Update(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
 	Context(" when is a generic event about a valid module", func() {
 		It("should return false", func() {
 			event := event.GenericEvent{Object: newValidModule()}
@@ -73,6 +105,14 @@ var _ = Describe("ModulePredicate", func() {
 	Context(" when a generic event is  not about a module resource", func() {
 		It("should return false", func() {
 			event := event.GenericEvent{Object: new(v1beta1.GitRepository)}
+			created := modulePredicate.Generic(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when a generic event has a nil resource", func() {
+		It("should return false", func() {
+			event := event.GenericEvent{Object: nil}
 			created := modulePredicate.Generic(event)
 			Expect(created).To(Equal(false))
 		})
