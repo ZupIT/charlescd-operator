@@ -134,6 +134,16 @@ var _ = Describe("ArtifactDownload", func() {
 			Expect(mod.Status.Conditions[0].Reason).To(Equal(expectedCondition.Reason))
 		})
 
+		It("should return error when module has multiple repository ", func() {
+
+			mod := setupModuleWithMultipleRepositories()
+
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).ToNot(BeNil())
+
+		})
+
 		It("should update status successfully when fails to send the http request", func() {
 			requestError := errors.New("error sending request")
 			messageError := fmt.Errorf(`error downloading source artifact: Get "https://example.com/manifests": %w`, requestError)
@@ -238,4 +248,13 @@ spec:
               port: http
           resources:
             {}`
+}
+
+func setupModuleWithMultipleRepositories() *charlescdv1alpha1.Module {
+	module := new(charlescdv1alpha1.Module)
+	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}}
+	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Spec.Helm = &charlescdv1alpha1.Helm{GitRepository: &charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
+	return module
 }

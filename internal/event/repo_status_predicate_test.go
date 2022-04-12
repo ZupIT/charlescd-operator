@@ -28,7 +28,15 @@ var _ = Describe("RepoStatusPredicate", func() {
 		})
 	})
 
-	Context(" when event is  about  a module resource deleted", func() {
+	Context(" when event is   about  a nil resource created", func() {
+		It("should return false", func() {
+			event := event.CreateEvent{Object: nil}
+			created := repoPredicate.Create(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when event is  about  a repository resource deleted", func() {
 		It("should return false", func() {
 			event := event.DeleteEvent{Object: getGitRepository()}
 			created := repoPredicate.Delete(event)
@@ -36,9 +44,17 @@ var _ = Describe("RepoStatusPredicate", func() {
 		})
 	})
 
-	Context(" when event is  not about  a module resource deleted", func() {
+	Context(" when event is  not about  a repository resource deleted", func() {
 		It("should return false", func() {
 			event := event.DeleteEvent{Object: newValidModule()}
+			created := repoPredicate.Delete(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when event is   about  a nil resource created", func() {
+		It("should return false", func() {
+			event := event.DeleteEvent{Object: nil}
 			created := repoPredicate.Delete(event)
 			Expect(created).To(Equal(false))
 		})
@@ -52,9 +68,33 @@ var _ = Describe("RepoStatusPredicate", func() {
 		})
 	})
 
-	Context(" when event is  not about  a repository resource deleted", func() {
+	Context(" when event is  about  two resources with artifacts updated", func() {
+		It("should return true", func() {
+			event := event.UpdateEvent{ObjectNew: getGitRepository(), ObjectOld: getGitRepositoryWithDifferentRevision()}
+			created := repoPredicate.Update(event)
+			Expect(created).To(Equal(true))
+		})
+	})
+
+	Context(" when event is  not about  a repository resource updated", func() {
 		It("should return false", func() {
 			event := event.UpdateEvent{ObjectNew: newValidModule(), ObjectOld: new(v1beta1.GitRepository)}
+			created := repoPredicate.Update(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when event has a nil resource being updated", func() {
+		It("should return false", func() {
+			event := event.UpdateEvent{ObjectNew: nil, ObjectOld: new(v1beta1.GitRepository)}
+			created := repoPredicate.Update(event)
+			Expect(created).To(Equal(false))
+		})
+	})
+
+	Context(" when event has an old resource that is not a gitrepository", func() {
+		It("should return false", func() {
+			event := event.UpdateEvent{ObjectNew: new(v1beta1.GitRepository), ObjectOld: newValidModule()}
 			created := repoPredicate.Update(event)
 			Expect(created).To(Equal(false))
 		})
@@ -75,11 +115,26 @@ var _ = Describe("RepoStatusPredicate", func() {
 			Expect(created).To(Equal(false))
 		})
 	})
+
+	Context(" when a generic event is   about  a nil resource", func() {
+		It("should return false", func() {
+			event := event.GenericEvent{Object: nil}
+			created := repoPredicate.Generic(event)
+			Expect(created).To(Equal(false))
+		})
+	})
 })
 
 func getGitRepository() *v1beta1.GitRepository {
 	return &v1beta1.GitRepository{
 		Spec:   v1beta1.GitRepositorySpec{URL: "https://example.com"},
-		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "https://example.com/manifests"}},
+		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "https://example.com/manifests", Revision: "1"}},
+	}
+}
+
+func getGitRepositoryWithDifferentRevision() *v1beta1.GitRepository {
+	return &v1beta1.GitRepository{
+		Spec:   v1beta1.GitRepositorySpec{URL: "https://example.com"},
+		Status: v1beta1.GitRepositoryStatus{Artifact: &v1beta1.Artifact{URL: "https://example.com/manifests", Revision: "2"}},
 	}
 }

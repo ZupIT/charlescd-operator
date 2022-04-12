@@ -36,7 +36,7 @@ func (g *RepoStatusPredicate) Create(event event.CreateEvent) bool {
 	log.WithValues("name", obj.GetName(),
 		"namespace", obj.GetNamespace(),
 		"resourceVersion", obj.GetResourceVersion()).
-		Info("Module created")
+		Info("GitRepository created")
 	return true
 }
 
@@ -104,6 +104,6 @@ func (g *RepoStatusPredicate) Generic(event event.GenericEvent) bool {
 	log.WithValues("name", obj.GetName(),
 		"namespace", obj.GetNamespace(),
 		"resourceVersion", obj.GetResourceVersion()).
-		Info("Module created")
+		Info("GitRepository generic")
 	return true
 }
