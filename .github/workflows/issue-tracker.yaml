@@ -20,7 +20,9 @@ on:
   issue_comment:
   issues:
     types: [opened, edited, reopened]
-    
+
+permissions: read-all
+
 jobs:
   issue:
     runs-on: ubuntu-latest
