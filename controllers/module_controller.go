@@ -43,6 +43,7 @@ type ModuleHandler struct {
 	*module.KustomizationValidation
 	*module.CheckComponents
 	*module.ManifestValidation
+	*module.Deploy
 }
 
 // ModuleReconciler reconciles a Module object
@@ -84,6 +85,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.handle.KustomizationValidation,
 		r.handle.ManifestValidation,
 		r.handle.CheckComponents,
+		r.handle.Deploy,
 	).Reconcile(ctx, m)
 }
 

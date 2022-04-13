@@ -19,6 +19,7 @@ import "github.com/google/wire"
 var Providers = wire.NewSet(
 	NewArtifactDownload,
 	NewCheckComponents,
+	NewDeploy,
 	NewDesiredState,
 	NewHelmValidation,
 	NewKustomizationValidation,
