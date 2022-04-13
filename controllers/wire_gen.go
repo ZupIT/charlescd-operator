@@ -14,7 +14,7 @@ import (
 	"github.com/ZupIT/charlescd-operator/pkg/filter"
 	"github.com/ZupIT/charlescd-operator/pkg/module"
 	"github.com/ZupIT/charlescd-operator/pkg/transformer"
-	client2 "github.com/manifestival/client-go-client"
+	client2 "github.com/manifestival/controller-runtime-client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -41,11 +41,7 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 		GitRepository: transformerGitRepository,
 		Metadata:      metadata,
 	}
-	config := runtime.Config(managerManager)
-	manifestivalClient, err := client2.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
+	manifestivalClient := client2.NewClient(clientClient)
 	manifests := &resources.Manifests{
 		Client: manifestivalClient,
 	}
