@@ -64,24 +64,18 @@ func newModuleReconciler(handle *ModuleHandler, client ModuleGetter) *ModuleReco
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
-	ctx = logf.IntoContext(ctx, log.WithValues("name", req.Name, "namespace", req.Namespace))
-
 	m, err := r.client.GetModule(ctx, req.NamespacedName)
 	if err != nil {
-		log.Error(err, "Error getting resource with desired module state")
+		logf.FromContext(ctx).Error(err, "Error getting resource with desired module state")
 		return r.RequeueOnErr(ctx, err)
 	}
 	if m == nil {
 		return r.Finish(ctx) // Module resource not found. Ignoring since object must be deleted
 	}
 
-	ctx = logf.IntoContext(ctx, log.WithValues(
-		"name", m.Name,
-		"namespace", m.Namespace,
-		"resourceVersion", m.ResourceVersion))
+	span, ctx := tracing.StartSpanFromContext(ctx, tracing.WithResource(m))
+	defer span.Finish()
+
 	return reconciler.Chain(
 		r.handle.Status,
 		r.handle.DesiredState,

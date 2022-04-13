@@ -32,6 +32,15 @@ type Span interface {
 
 type defaultSpan struct{ trace.Span }
 
+func (s *defaultSpan) setKubernetesResource(resource *kubernetesResource) {
+	s.SetAttributes(attribute.String("kubernetes.resource.kind", resource.kind))
+	s.SetAttributes(attribute.String("kubernetes.resource.name", resource.name))
+	if resource.IsNamespaced() {
+		s.SetAttributes(attribute.String("kubernetes.resource.namespace", resource.namespace))
+	}
+	s.SetAttributes(attribute.String("kubernetes.resource.version", resource.version))
+}
+
 func (s *defaultSpan) Finish() { s.End() }
 
 func (s *defaultSpan) Error(err error) error {
@@ -41,8 +50,8 @@ func (s *defaultSpan) Error(err error) error {
 		var serr *kerrors.StatusError
 		if errors.As(err, &serr) {
 			status := serr.Status()
-			s.SetAttributes(attribute.Int64("code", int64(status.Code)))
-			s.SetAttributes(attribute.String("reason", string(status.Reason)))
+			s.SetAttributes(attribute.Int64("kubernetes.error.code", int64(status.Code)))
+			s.SetAttributes(attribute.String("kubernetes.error.reason", string(status.Reason)))
 		}
 	}
 	return err
@@ -54,7 +63,5 @@ func (s *defaultSpan) String() string {
 		return ""
 	}
 	traceID := ctx.TraceID()
-	spanID := ctx.SpanID()
-	isSampled := ctx.IsSampled()
-	return fmt.Sprintf("%s:%s:%t", traceID, spanID, isSampled)
+	return fmt.Sprintf("%s", traceID)
 }

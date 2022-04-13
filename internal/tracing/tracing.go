@@ -22,6 +22,8 @@ import (
 	"runtime"
 	"strings"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -35,7 +37,7 @@ import (
 
 const (
 	module      = "github.com/ZupIT/charlescd-operator"
-	service     = "charles"
+	service     = "charlescd-operator"
 	envEndpoint = "OTEL_EXPORTER_JAEGER_ENDPOINT"
 )
 
@@ -68,12 +70,23 @@ func SpanFromContext(ctx context.Context) Span {
 	return &defaultSpan{Span: span}
 }
 
-func StartSpanFromContext(ctx context.Context) (Span, context.Context) {
+func StartSpanFromContext(ctx context.Context, options ...ContextOptionFunc) (Span, context.Context) {
+	for _, fn := range options {
+		if fn == nil {
+			continue
+		}
+		ctx = fn(ctx)
+	}
+
 	pc, _, _, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
 	spanName := strings.Replace(funcName, module+"/", "", 1)
 	newCtx, span := otel.Tracer(service).Start(ctx, spanName)
 	s := &defaultSpan{Span: span}
 	log := ctrl.Log.WithName(spanName).WithValues("trace", s.String())
+	if r, ok := ctx.Value(kubernetesResourceContextKey{}).(*kubernetesResource); ok {
+		s.setKubernetesResource(r)
+		log = log.WithValues("resource", r.String())
+	}
 	return s, logf.IntoContext(newCtx, log)
 }
