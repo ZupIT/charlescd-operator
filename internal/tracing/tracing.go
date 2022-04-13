@@ -22,17 +22,15 @@ import (
 	"runtime"
 	"strings"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"go.opentelemetry.io/otel"
 )
 
 const (
