@@ -51,7 +51,6 @@ jobs:
 
       - name: Building Go binary
         run: go build -o bin/manager main.go
-
       - name: Get Tests Path
         id: path_tests
         run: |
