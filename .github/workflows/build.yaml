@@ -58,7 +58,7 @@ jobs:
            echo "::set-output name=COVERPKG::$(go list ./... | grep -v mocks | tr '\n' ',')"
 
       - name: Run tests
-        run: go test -race -coverpkg=${{ steps.path_tests.outputs.COVERPKG }} -coverprofile=profile.cov ./...
+        run: go test -v -race -coverpkg=${{ steps.path_tests.outputs.COVERPKG }} -coverprofile=profile.cov ./...
 
       - name: Tests coverage
         uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b #v2;1;0
