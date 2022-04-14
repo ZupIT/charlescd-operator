@@ -17,15 +17,15 @@ package module
 import (
 	"context"
 
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
+
 	"github.com/angelokurtis/reconciler"
-	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
-	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 const (
@@ -62,21 +62,9 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 		return h.Next(ctx, module)
 	}
 
-	// starting the context
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
-	log.Info("Starting manifest validation reconcile")
 	// Loading pure manifests
-
-	manifests, err := h.manifestClient.LoadFromSource(
-		ctx,
-		module.Status.Source.Path,
-		module.Spec.Manifests.GitRepository.Path,
-		module.Spec.Manifests.Recursive,
-	)
+	manifests, err := h.manifests(ctx, module)
 	if err != nil {
-		log.Error(err, "Error loading manifests from source")
 		if module.SetSourceInvalid(manifestError, err.Error()) {
 			return h.status.UpdateModuleStatus(ctx, module)
 		}
@@ -89,4 +77,15 @@ func (h *ManifestValidation) reconcile(ctx context.Context, module *charlescdv1a
 	}
 
 	return h.Next(contextWithResources(ctx, manifests.Resources()), module)
+}
+
+func (h *ManifestValidation) manifests(ctx context.Context, module *charlescdv1alpha1.Module) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return h.manifestClient.LoadFromSource(
+		ctx,
+		module.Status.Source.Path,
+		module.Spec.Manifests.GitRepository.Path,
+		module.Spec.Manifests.Recursive,
+	)
 }

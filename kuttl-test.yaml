@@ -15,14 +15,12 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 kindContext: charlescd
-timeout: 180
-kindNodeCache: true
-skipClusterDelete: false
-skipDelete: false
-startKIND: true
+skipClusterDelete: true
+skipDelete: true
+startKIND: false
 commands:
-  - command: make deploy IMG=charlescd.io/charlescd-operator:0.0.1
+#  - command: make deploy IMG=charlescd.io/charlescd-operator:0.0.1
   - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-operator
   - command: kubectl -n charlescd wait --timeout=60s --for=condition=Available deployment.apps/charlescd-flux-source-controller
 testDirs: [ ./test/integration/ ]
-kindContainers: [ "charlescd.io/charlescd-operator:0.0.1" ]
+#kindContainers: [ "charlescd.io/charlescd-operator:0.0.1" ]

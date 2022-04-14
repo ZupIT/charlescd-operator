@@ -17,13 +17,14 @@ package module
 import (
 	"context"
 
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
 	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
+	mf "github.com/manifestival/manifestival"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
-	"github.com/ZupIT/charlescd-operator/internal/tracing"
 	"github.com/ZupIT/charlescd-operator/pkg/filter"
 	"github.com/ZupIT/charlescd-operator/pkg/transformer"
 )
@@ -58,35 +59,57 @@ func (d *DesiredState) Reconcile(ctx context.Context, obj client.Object) (ctrl.R
 }
 
 func (d *DesiredState) reconcile(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
-
-	manifests, err := d.manifest.LoadDefaults(ctx)
+	manifests, err := d.manifests(ctx)
 	if err != nil {
-		log.Error(err, "Error reading YAML manifests")
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	// filters unnecessary manifests
-	manifests = manifests.Filter(
-		d.filters.FilterGitRepository(module),
-	)
+	manifests = d.filter(ctx, manifests, module)
 
 	// transform manifests to desired state
-	if manifests, err = manifests.Transform(
-		d.transformers.TransformMetadata(module),
-		d.transformers.TransformGitRepository(module),
-	); err != nil {
-		log.Error(err, "Error transforming a manifest resource")
+	if manifests, err = d.transform(ctx, manifests, module); err != nil {
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	// apply desired state
-	if err = manifests.Apply(); err != nil {
-		log.Error(err, "Error applying changes to resources in manifest")
+	if err = d.apply(ctx, manifests); err != nil {
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	return d.Next(ctx, module)
+}
+
+func (d *DesiredState) apply(ctx context.Context, manifests mf.Manifest) error {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	err := manifests.Apply()
+	if err != nil {
+		return err
+	}
+	logr.FromContextOrDiscard(ctx).Info("Manifests applied")
+	return err
+}
+
+func (d *DesiredState) transform(ctx context.Context, manifests mf.Manifest, module *charlescdv1alpha1.Module) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return manifests.Transform(
+		d.transformers.TransformMetadata(module),
+		d.transformers.TransformGitRepository(module),
+	)
+}
+
+func (d *DesiredState) filter(ctx context.Context, manifests mf.Manifest, module *charlescdv1alpha1.Module) mf.Manifest {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return manifests.Filter(
+		d.filters.FilterGitRepository(module),
+	)
+}
+
+func (d *DesiredState) manifests(ctx context.Context) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return d.manifest.LoadDefaults(ctx)
 }

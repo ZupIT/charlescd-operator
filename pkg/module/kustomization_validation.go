@@ -17,25 +17,25 @@ package module
 import (
 	"context"
 
-	"github.com/angelokurtis/reconciler"
+	"github.com/ZupIT/charlescd-operator/internal/tracing"
 	"github.com/go-logr/logr"
+
+	"github.com/angelokurtis/reconciler"
 	mf "github.com/manifestival/manifestival"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
-	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 const (
 	sourceError              = "Error templating source"
-	kustomizationValid       = "Kustomize configurations are valid"
 	kustomizationSourceValid = "Kustomization were successfully rendered"
 )
 
 type (
 	KustomizationClient interface {
-		Kustomize(ctx context.Context, source, path string) (mf.Manifest, error)
+		Build(ctx context.Context, source, path string) (mf.Manifest, error)
 	}
 	KustomizationValidation struct {
 		reconciler.Funcs
@@ -64,19 +64,12 @@ func (k *KustomizationValidation) reconcile(ctx context.Context, module *charles
 		return k.Next(ctx, module)
 	}
 
-	// starting the context
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-
-	log := logr.FromContextOrDiscard(ctx)
-
 	source := module.Status.Source.Path
 	path := kustomization.GitRepository.Path
 
 	// templating Kustomization
-	manifests, err := k.kustomization.Kustomize(ctx, source, path)
+	manifests, err := k.kustomizeBuild(ctx, source, path)
 	if err != nil {
-		log.Error(err, sourceError)
 		if module.SetSourceInvalid(renderError, err.Error()) {
 			return k.status.UpdateModuleStatus(ctx, module)
 		}
@@ -84,10 +77,22 @@ func (k *KustomizationValidation) reconcile(ctx context.Context, module *charles
 	}
 
 	// update status to success
-	if module.SetSourceValid(kustomizationSourceValid) {
+	if k.validate(ctx, module) {
 		return k.status.UpdateModuleStatus(ctx, module)
 	}
 
-	log.Info(kustomizationValid)
 	return k.Next(contextWithResources(ctx, manifests.Resources()), module)
+}
+
+func (k *KustomizationValidation) kustomizeBuild(ctx context.Context, source, path string) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return k.kustomization.Build(ctx, source, path)
+}
+
+func (k *KustomizationValidation) validate(ctx context.Context, module *charlescdv1alpha1.Module) bool {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	logr.FromContextOrDiscard(ctx).Info("Kustomize configurations are valid")
+	return module.SetSourceValid(kustomizationSourceValid)
 }

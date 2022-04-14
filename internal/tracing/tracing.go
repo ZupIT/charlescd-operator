@@ -81,7 +81,7 @@ func StartSpanFromContext(ctx context.Context, options ...ContextOptionFunc) (Sp
 	spanName := strings.Replace(funcName, module+"/", "", 1)
 	newCtx, span := otel.Tracer(service).Start(ctx, spanName)
 	s := &defaultSpan{Span: span}
-	log := ctrl.Log.WithName(spanName).WithValues("trace", s.String())
+	log := ctrl.Log.WithValues("trace", s.String())
 	if r, ok := ctx.Value(kubernetesResourceContextKey{}).(*kubernetesResource); ok {
 		s.setKubernetesResource(r)
 		log = log.WithValues("resource", r.String())

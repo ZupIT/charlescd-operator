@@ -16,6 +16,7 @@ package module
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,10 +31,11 @@ import (
 type Deploy struct {
 	reconciler.Funcs
 	manifest ManifestReader
+	status   StatusWriter
 }
 
-func NewDeploy(manifest ManifestReader) *Deploy {
-	return &Deploy{manifest: manifest}
+func NewDeploy(manifest ManifestReader, status StatusWriter) *Deploy {
+	return &Deploy{manifest: manifest, status: status}
 }
 
 func (d *Deploy) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
@@ -51,16 +53,19 @@ func (d *Deploy) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result,
 func (d *Deploy) reconcile(ctx context.Context, module *charlescdv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
 	manifests, err := d.manifests(ctx, resources)
 	if err != nil {
+		// TODO: update error status
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	manifests, err = d.transform(ctx, manifests, module)
 	if err != nil {
+		// TODO: update error status
 		return d.RequeueOnErr(ctx, err)
 	}
 
 	err = d.apply(ctx, manifests)
 	if err != nil {
+		// TODO: update error status
 		return d.RequeueOnErr(ctx, err)
 	}
 

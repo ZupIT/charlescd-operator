@@ -48,6 +48,9 @@ spec:
         image: controller:latest
         imagePullPolicy: IfNotPresent
         name: manager
+        env:
+          - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+            value: http://simplest-jaeger-collector.jaeger:14268/api/traces
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:

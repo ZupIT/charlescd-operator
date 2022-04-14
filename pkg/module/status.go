@@ -22,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	charlescdv1alpha1 "github.com/ZupIT/charlescd-operator/api/v1alpha1"
-	"github.com/ZupIT/charlescd-operator/internal/tracing"
 )
 
 type Status struct {
@@ -42,9 +41,6 @@ func (s *Status) Reconcile(ctx context.Context, obj client.Object) (ctrl.Result,
 }
 
 func (s *Status) reconcile(ctx context.Context, module *charlescdv1alpha1.Module) (ctrl.Result, error) {
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-
 	if module.UpdatePhase() {
 		return s.status.UpdateModuleStatus(ctx, module)
 	}

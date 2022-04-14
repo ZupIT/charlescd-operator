@@ -36,7 +36,7 @@ func NewKustomization(manifests ManifestsReader) *Kustomization {
 	return &Kustomization{manifests: manifests}
 }
 
-func (k *Kustomization) Kustomize(ctx context.Context, source, path string) (mf.Manifest, error) {
+func (k *Kustomization) Build(ctx context.Context, source, path string) (mf.Manifest, error) {
 	destination := source[0 : len(source)-len(".tar.gz")]
 	if path != "" {
 		source += "//" + path

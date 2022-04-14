@@ -55,7 +55,7 @@ func createReconcilers(managerManager manager.Manager) ([]Reconciler, error) {
 	checkComponents := module.NewCheckComponents(manifests, unstructuredConverter, clientModule)
 	manifest := client.NewManifest(manifests)
 	manifestValidation := module.NewManifestValidation(clientModule, manifest)
-	deploy := module.NewDeploy(manifests)
+	deploy := module.NewDeploy(manifests, clientModule)
 	moduleHandler := &ModuleHandler{
 		Status:                  status,
 		DesiredState:            desiredState,

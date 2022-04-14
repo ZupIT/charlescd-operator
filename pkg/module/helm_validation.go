@@ -17,8 +17,9 @@ package module
 import (
 	"context"
 
-	"github.com/angelokurtis/reconciler"
 	"github.com/go-logr/logr"
+
+	"github.com/angelokurtis/reconciler"
 	mf "github.com/manifestival/manifestival"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -63,20 +64,14 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *charlescdv1alpha
 		return h.Next(ctx, module)
 	}
 
-	// starting the context
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
-
 	source, path := module.Status.Source.Path, ""
 	if helm.GitRepository != nil && helm.GitRepository.Path != "" {
 		path = helm.GitRepository.Path
 	}
 
 	// templating Helm chart
-	manifests, err := h.helm.Template(ctx, module.GetName(), source, path, helm.Values)
+	manifests, err := h.helmTemplate(ctx, module.GetName(), source, path, helm.Values)
 	if err != nil {
-		log.Error(err, "Error templating source")
 		if module.SetSourceInvalid(renderError, err.Error()) {
 			return h.status.UpdateModuleStatus(ctx, module)
 		}
@@ -84,10 +79,22 @@ func (h *HelmValidation) reconcile(ctx context.Context, module *charlescdv1alpha
 	}
 
 	// update status to success
-	if module.SetSourceValid(successRenderMessage) {
+	if h.validate(ctx, module) {
 		return h.status.UpdateModuleStatus(ctx, module)
 	}
 
-	log.Info("Helm chart is valid")
 	return h.Next(contextWithResources(ctx, manifests.Resources()), module)
+}
+
+func (h *HelmValidation) validate(ctx context.Context, module *charlescdv1alpha1.Module) bool {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	logr.FromContextOrDiscard(ctx).Info("Helm chart is valid")
+	return module.SetSourceValid(successRenderMessage)
+}
+
+func (h *HelmValidation) helmTemplate(ctx context.Context, name, source, path string, values *apiextensionsv1.JSON) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return h.helm.Template(ctx, name, source, path, values)
 }

@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -60,27 +61,36 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	opts := zapr.Options{
-		Development:     true,
-		StacktraceLevel: zap.NewAtomicLevelAt(zap.PanicLevel),
+		Development: true,
 		Encoder: zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
-			TimeKey:        "T",
-			LevelKey:       "L",
-			NameKey:        "N",
-			CallerKey:      "C",
-			FunctionKey:    zapcore.OmitKey,
-			MessageKey:     "M",
-			StacktraceKey:  "S",
-			LineEnding:     zapcore.DefaultLineEnding,
-			EncodeLevel:    zapcore.CapitalColorLevelEncoder,
-			EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+			TimeKey:       "T",
+			LevelKey:      "L",
+			NameKey:       "N",
+			CallerKey:     "C",
+			FunctionKey:   zapcore.OmitKey,
+			MessageKey:    "M",
+			StacktraceKey: "S",
+			LineEnding:    zapcore.DefaultLineEnding,
+			EncodeLevel:   zapcore.CapitalColorLevelEncoder,
+			EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+				type appendTimeEncoder interface {
+					AppendTimeLayout(time.Time, string)
+				}
+				layout := "15:04:05.99"
+				if enc, ok := enc.(appendTimeEncoder); ok {
+					enc.AppendTimeLayout(t, layout)
+					return
+				}
+				enc.AppendString(t.Format(layout))
+			},
 			EncodeDuration: zapcore.StringDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeCaller:   zapcore.FullCallerEncoder,
 		}),
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zapr.New(zapr.UseFlagOptions(&opts)))
+	ctrl.SetLogger(zapr.New(zapr.UseFlagOptions(&opts), zapr.RawZapOpts(zap.AddCaller(), zap.AddCallerSkip(-1))))
 
 	closer, err := tracing.Initialize()
 	if err != nil {

@@ -17,10 +17,10 @@ package module
 import (
 	"context"
 	"errors"
-	"fmt"
+
+	"github.com/go-logr/logr"
 
 	"github.com/angelokurtis/reconciler"
-	"github.com/go-logr/logr"
 	mf "github.com/manifestival/manifestival"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -66,20 +66,35 @@ func (c *CheckComponents) Reconcile(ctx context.Context, obj client.Object) (ctr
 }
 
 func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alpha1.Module, resources []unstructured.Unstructured) (ctrl.Result, error) {
-	span, ctx := tracing.StartSpanFromContext(ctx)
-	defer span.Finish()
-	log := logr.FromContextOrDiscard(ctx)
-
-	manifests, err := c.manifest.FromUnstructured(ctx, resources)
+	manifests, err := c.manifests(ctx, resources)
 	if err != nil {
 		return c.RequeueOnErr(ctx, err)
 	}
+
+	components, err := c.filter(ctx, module, manifests)
+	if duplicatedErr := new(DuplicatedComponentErr); errors.As(err, &duplicatedErr) {
+		module.SetSourceInvalid(DuplicatedComponent, err.Error())
+		return c.status.UpdateModuleStatus(ctx, module)
+	} else if err != nil {
+		return c.RequeueOnErr(ctx, err)
+	}
+
+	if module.SetComponents(components) {
+		return c.status.UpdateModuleStatus(ctx, module)
+	}
+	return c.Next(ctx, module)
+}
+
+func (c *CheckComponents) filter(ctx context.Context, module *charlescdv1alpha1.Module, manifests mf.Manifest) ([]*charlescdv1alpha1.Component, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	log := logr.FromContextOrDiscard(ctx)
 
 	components := make([]*charlescdv1alpha1.Component, 0, 0)
 	for _, u := range manifests.Filter(mf.ByKind("Deployment")).Resources() {
 		deploy := &appsv1.Deployment{}
 		if err := c.object.FromUnstructured(&u, deploy); err != nil {
-			return c.RequeueOnErr(ctx, err)
+			return nil, err
 		}
 		component := &charlescdv1alpha1.Component{Name: deploy.GetName()}
 		for _, container := range deploy.Spec.Template.Spec.Containers {
@@ -88,8 +103,7 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 				Image: container.Image,
 			})
 			if err := c.checkComponentIsAlreadyPresent(components, component); err != nil {
-				module.SetSourceInvalid(DuplicatedComponent, err.Error())
-				return c.status.UpdateModuleStatus(ctx, module)
+				return nil, err
 			}
 			components = append(components, component)
 		}
@@ -100,17 +114,19 @@ func (c *CheckComponents) reconcile(ctx context.Context, module *charlescdv1alph
 	} else {
 		log.Info("No deployable components were found")
 	}
+	return components, nil
+}
 
-	if module.SetComponents(components) {
-		return c.status.UpdateModuleStatus(ctx, module)
-	}
-	return c.Next(ctx, module)
+func (c *CheckComponents) manifests(ctx context.Context, resources []unstructured.Unstructured) (mf.Manifest, error) {
+	span, ctx := tracing.StartSpanFromContext(ctx)
+	defer span.Finish()
+	return c.manifest.FromUnstructured(ctx, resources)
 }
 
 func (c *CheckComponents) checkComponentIsAlreadyPresent(components []*charlescdv1alpha1.Component, component *charlescdv1alpha1.Component) error {
-	for _, c := range components {
-		if c.Name == component.Name {
-			return fmt.Errorf("%s: %w", c.Name, ErrorDuplicatedComponent)
+	for _, cpnt := range components {
+		if cpnt.Name == component.Name {
+			return newDuplicatedComponentErr(cpnt.Name)
 		}
 	}
 	return nil

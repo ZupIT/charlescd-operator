@@ -141,15 +141,15 @@ func (a *ArtifactDownload) download(ctx context.Context, filepath string, artifa
 	defer span.Finish()
 
 	// local testing purposes only
-	// u, err := url.Parse(artifact.URL)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// u.Scheme = "http"
-	// u.Host = "127.0.0.1:9090"
-	// req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	u, err := url.Parse(artifact.URL)
+	if err != nil {
+		panic(err)
+	}
+	u.Scheme = "http"
+	u.Host = "127.0.0.1:9090"
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, artifact.URL, nil)
+	//req, err := http.NewRequestWithContext(ctx, http.MethodGet, artifact.URL, nil)
 	if err != nil {
 		return fmt.Errorf("error downloading source artifact: %w", err)
 	}
