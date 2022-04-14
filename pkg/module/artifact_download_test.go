@@ -185,12 +185,32 @@ var _ = Describe("ArtifactDownload", func() {
 
 		It("should return error when module has multiple repository", func() {
 
-			mod := setupModuleWithMultipleRepositories()
+			mod := newModuleWithMultipleRepositories()
 
 			_, err := artifactDownload.Reconcile(ctx, mod)
 
 			Expect(err).ToNot(BeNil())
 
+		})
+
+		It("should not update status when module has no git", func() {
+
+			mod := newModuleWithoutGit()
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, mod).Return(ctrl.Result{}, nil)
+			_, err := artifactDownload.Reconcile(ctx, mod)
+
+			Expect(err).To(BeNil())
+			statusWriterMock.AssertNumberOfCalls(GinkgoT(), "UpdateModuleStatus", 0)
+		})
+
+		It("should not update status when reconcile object is not a module", func() {
+
+			git := getGitRepository()
+			statusWriterMock.On("UpdateModuleStatus", mock.Anything, git).Return(ctrl.Result{}, nil)
+			_, err := artifactDownload.Reconcile(ctx, git)
+
+			Expect(err).To(BeNil())
+			statusWriterMock.AssertNumberOfCalls(GinkgoT(), "UpdateModuleStatus", 0)
 		})
 
 		It("should update status successfully when fails to send the http request", func() {
@@ -320,11 +340,18 @@ spec:
             {}`
 }
 
-func setupModuleWithMultipleRepositories() *charlescdv1alpha1.Module {
+func newModuleWithMultipleRepositories() *charlescdv1alpha1.Module {
 	module := new(charlescdv1alpha1.Module)
 	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}}
 	module.Spec.Manifests = &charlescdv1alpha1.Manifests{GitRepository: charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
 	module.Spec.Helm = &charlescdv1alpha1.Helm{GitRepository: &charlescdv1alpha1.GitRepository{URL: "https://example.com"}}
+	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
+	return module
+}
+
+func newModuleWithoutGit() *charlescdv1alpha1.Module {
+	module := new(charlescdv1alpha1.Module)
+	module.Status.Conditions = []metav1.Condition{{Type: "SourceReady", Status: metav1.ConditionTrue}}
 	module.Status.Source = &charlescdv1alpha1.Source{Path: "path/file.tgz"}
 	return module
 }

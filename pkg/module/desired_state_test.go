@@ -26,12 +26,15 @@ import (
 	"github.com/ZupIT/charlescd-operator/pkg/transformer"
 	"github.com/angelokurtis/reconciler"
 	sourcev1beta1 "github.com/fluxcd/source-controller/api/v1beta1"
+	mf "github.com/manifestival/manifestival"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var _ = Describe("DesiredState", func() {
@@ -40,9 +43,12 @@ var _ = Describe("DesiredState", func() {
 	var manifestReaderMock *resources.Manifests
 	var desiredState *module.DesiredState
 	var clientMock *mocks.Client
+	var filters *module.Filters
+	var transformers *module.Transformers
+	var scheme *runtime.Scheme
 	BeforeEach(func() {
 
-		scheme := runtime.NewScheme()
+		scheme = runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(charlescdv1alpha1.AddToScheme(scheme))
 		utilruntime.Must(sourcev1beta1.AddToScheme(scheme))
@@ -52,7 +58,7 @@ var _ = Describe("DesiredState", func() {
 			Client: clientMock,
 		}
 		gitRepository := &filter.GitRepository{}
-		filters := &module.Filters{
+		filters = &module.Filters{
 			GitRepository: gitRepository,
 		}
 		unstructuredConverter := &object.UnstructuredConverter{
@@ -63,11 +69,11 @@ var _ = Describe("DesiredState", func() {
 		}
 		metadata := transformer.NewMetadata(reference)
 		transformerGitRepository := transformer.NewGitRepository(unstructuredConverter)
-		transformer := &module.Transformers{
+		transformers = &module.Transformers{
 			GitRepository: transformerGitRepository,
 			Metadata:      metadata,
 		}
-		desiredState = module.NewDesiredState(filters, transformer, manifestReaderMock)
+		desiredState = module.NewDesiredState(filters, transformers, manifestReaderMock)
 		reconciler.Chain(desiredState)
 	})
 
@@ -80,10 +86,55 @@ var _ = Describe("DesiredState", func() {
 			clientMock.On("Get", mock.Anything).Return(nil, nil)
 			clientMock.On("Create", mock.Anything, mock.Anything).Return(nil)
 			_, err := desiredState.Reconcile(contextWithResources, mod)
+
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Get", 1)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Create", 1)
 			Expect(err).To(BeNil())
 		})
 
-		It("should apply the correct desire state", func() {
+		It("should return error when fails to load defaults manifests", func() {
+			expectedError := errors.New("failed to load manifests")
+			contextWithResources := fillContextResources(ctx)
+			mod := newValidModule()
+			manifestReaderMock := new(mocks.ManifestReader)
+			desiredState := module.NewDesiredState(filters, transformers, manifestReaderMock)
+			reconciler.Chain(desiredState)
+			manifestReaderMock.On("LoadDefaults", mock.Anything).Return(mf.Manifest{}, expectedError)
+			_, err := desiredState.Reconcile(contextWithResources, mod)
+
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Get", 0)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Create", 0)
+			Expect(err.Error()).To(Equal(expectedError.Error()))
+		})
+
+		It("should return error when fails to transform manifests", func() {
+			manifests, _ := mf.ManifestFrom(mf.Slice(getGitRepositoryUnstructured()))
+			expectedError := errors.New(
+				`failed to set *unstructured.Unstructured "" controller reference: Object / is already owned by another GitRepository controller `)
+			contextWithResources := fillContextResources(ctx)
+			mod := newValidModule()
+			manifestReaderMock := new(mocks.ManifestReader)
+			desiredState := module.NewDesiredState(filters, transformers, manifestReaderMock)
+			reconciler.Chain(desiredState)
+			manifestReaderMock.On("LoadDefaults", mock.Anything).Return(manifests, nil)
+			_, err := desiredState.Reconcile(contextWithResources, mod)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Get", 0)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Create", 0)
+			Expect(err.Error()).To(Equal(expectedError.Error()))
+		})
+
+		It("should not do reconcile when resource is not a module", func() {
+
+			contextWithResources := fillContextResources(ctx)
+			mod := getGitRepository()
+			clientMock.On("Get", mock.Anything).Return(nil, nil)
+			clientMock.On("Create", mock.Anything, mock.Anything).Return(nil)
+			_, err := desiredState.Reconcile(contextWithResources, mod)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Get", 0)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error when apply fails", func() {
 			applyError := errors.New("error applying manifests")
 			contextWithResources := fillContextResources(ctx)
 			mod := newValidModule()
@@ -92,7 +143,33 @@ var _ = Describe("DesiredState", func() {
 			clientMock.On("Create", mock.Anything, mock.Anything).Return(applyError)
 			_, err := desiredState.Reconcile(contextWithResources, mod)
 			Expect(err).To(Equal(applyError))
+
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Get", 1)
+			clientMock.AssertNumberOfCalls(GinkgoT(), "Create", 1)
 		})
 
 	})
 })
+
+func getGitRepositoryUnstructured() []unstructured.Unstructured {
+	unstructuredGit := unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "source.toolkit.fluxcd.io/v1beta1",
+			"kind":       "GitRepository",
+			"metadata": map[string]interface{}{
+				"name": "default",
+			},
+			"spec": map[string]interface{}{
+				"interval": "1m",
+				"url":      "",
+			},
+		},
+	}
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(charlescdv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(sourcev1beta1.AddToScheme(scheme))
+	error := controllerutil.SetControllerReference(getGitRepository(), &unstructuredGit, scheme)
+	Expect(error).ToNot(HaveOccurred())
+	return []unstructured.Unstructured{unstructuredGit}
+}
