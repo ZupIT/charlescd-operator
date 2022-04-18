@@ -99,7 +99,9 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 GOFUMPT = $(shell pwd)/bin/gofumpt
 gofumpt: ## Download gofumpt locally if necessary.
 	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.3.0)
-
+tgz-data-test: ## Do tar gz of test data helm chart.
+	tar -zcvf ./internal/client/testdata/helm/chart.tar.gz ./internal/client/testdata/helm/fake-app
+	tar -zcvf ./internal/client/testdata/kustomize.tar.gz ./internal/client/testdata/kustomize
 fmt: gofumpt ## Run go fmt against code.
 	$(GOFUMPT) -l -w -extra .
 
@@ -115,10 +117,13 @@ copyright: addlicense ## Ensures source code files have copyright license header
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+test-coverage: tgz-data-test
+	go test -v -race -coverpkg=$(COVERPKG) -coverprofile=profile.cov ./...
 e2e-test: kuttl docker-build
 	sed -i 's,\- command\: make deploy.*,\- command\: make deploy IMG\=${IMG},g' kuttl-test.yaml
 	sed -i 's,kindContainers\:.*,kindContainers\: [ "${IMG}" ],g' kuttl-test.yaml
 	$(KUTTL) test
+
 
 ##@ Build
 
@@ -149,7 +154,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-
+COVERPKG = $(shell go list ./... | grep -v 'mocks\|controllers\|main.go' | tr '\n' ',')
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)

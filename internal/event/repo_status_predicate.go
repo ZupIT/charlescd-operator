@@ -25,7 +25,20 @@ func NewRepoStatusPredicate() *RepoStatusPredicate {
 	return &RepoStatusPredicate{}
 }
 
-func (g *RepoStatusPredicate) Create(event.CreateEvent) bool { return false }
+func (g *RepoStatusPredicate) Create(event event.CreateEvent) bool {
+	obj := event.Object
+	if obj == nil {
+		return false
+	}
+	if _, ok := obj.(*sourcev1beta1.GitRepository); !ok {
+		return false
+	}
+	log.WithValues("name", obj.GetName(),
+		"namespace", obj.GetNamespace(),
+		"resourceVersion", obj.GetResourceVersion()).
+		Info("GitRepository created")
+	return true
+}
 
 func (g *RepoStatusPredicate) Update(event event.UpdateEvent) bool {
 	objOld, objNew := event.ObjectOld, event.ObjectNew
@@ -80,4 +93,17 @@ func (g *RepoStatusPredicate) Delete(event event.DeleteEvent) bool {
 	return true
 }
 
-func (g *RepoStatusPredicate) Generic(event.GenericEvent) bool { return false }
+func (g *RepoStatusPredicate) Generic(event event.GenericEvent) bool {
+	obj := event.Object
+	if obj == nil {
+		return false
+	}
+	if _, ok := obj.(*sourcev1beta1.GitRepository); !ok {
+		return false
+	}
+	log.WithValues("name", obj.GetName(),
+		"namespace", obj.GetNamespace(),
+		"resourceVersion", obj.GetResourceVersion()).
+		Info("GitRepository generic")
+	return true
+}

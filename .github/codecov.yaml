@@ -1,0 +1,11 @@
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%    # the required coverage value
+        threshold: 4%  # the leniency in hitting the target
+
+ignore:
+  - "controllers/**/*"  # ignore folders and all its contents
+  - "main.go"       # wildcards accepted
