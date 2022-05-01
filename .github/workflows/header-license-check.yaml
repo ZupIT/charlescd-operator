@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #v.2.4.0
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v.2.4.0
       - name: Check License and license year on prs
         uses: ZupIT/header-license-checker@635176fe2d08208c8256fd96cebae5c9a47e633c #v0.0.3
         with:
