@@ -202,7 +202,7 @@ jobs:
 
       - name: Upload integration test results
         if: always()
-        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.0.0
         with:
           name: kuttl-test-${{ steps.vars.outputs.COMMIT_HASH }}-${{ matrix.kubernetes }}
           path: |
