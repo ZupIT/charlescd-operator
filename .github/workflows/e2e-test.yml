@@ -79,7 +79,7 @@ jobs:
 
       - name: Cache binaries
         id: bin-cache
-        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        uses: actions/cache@afc669e7fce1370457d4c97e4ce71cd7b277760f # v3.0.0
         with:
           path: ./bin
           key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
@@ -155,7 +155,7 @@ jobs:
             require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
 
       - name: Cache binaries
-        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        uses: actions/cache@afc669e7fce1370457d4c97e4ce71cd7b277760f # v3.0.0
         with:
           path: ./bin
           key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}

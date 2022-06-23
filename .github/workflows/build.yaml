@@ -37,7 +37,7 @@ jobs:
           go-version: "~1.17"
 
       - name: Cache
-        uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #v2.1.7
+        uses: actions/cache@afc669e7fce1370457d4c97e4ce71cd7b277760f #v2.1.7
         with:
           path: |
             ~/.cache/go-build
