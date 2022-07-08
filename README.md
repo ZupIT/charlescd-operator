@@ -1,3 +1,5 @@
+# The Charles project has been archived by Zup Innovation. It might start again eventually; however, we won't deliver support for now.
+
 # CharlesCD-Operator
 
 <img class="special-img-class" src="https://raw.githubusercontent.com/ZupIT/charlescd/main/images/logo.png"  alt="CharlesCD logo"/>
